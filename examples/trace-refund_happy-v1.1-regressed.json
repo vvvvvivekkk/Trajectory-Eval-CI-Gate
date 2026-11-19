@@ -2,6 +2,7 @@
   "task_id": "refund_happy",
   "agent_version": "v1.1-regressed",
   "run_id": "run-1",
+  "model": "demo-model-v1",
   "steps": [
     {
       "index": 0,
@@ -119,5 +120,5 @@
   ],
   "final_answer": "I've approved a refund of $120.00 for order A1001. It should appear on your card in 3-5 business days, reference RF-A1001.",
   "total_latency_ms": 640,
-  "usd_cost": 0.00855
+  "usd_cost": 0.0
 }

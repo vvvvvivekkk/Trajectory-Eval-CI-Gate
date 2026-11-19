@@ -1,6 +1,6 @@
 {
   "agent_version": "v1.0-good",
-  "created_at": "2026-11-19T16:46:40+00:00",
+  "created_at": "2026-11-19T16:57:41+00:00",
   "tasks": [
     {
       "task_id": "billing_dispute",
@@ -87,7 +87,18 @@
         }
       ],
       "notes": [],
-      "matched_path": "primary"
+      "matched_path": "primary",
+      "runs": 1,
+      "run_scores": [
+        1.0
+      ],
+      "spread": 0.0,
+      "stability": 1.0,
+      "run_pass_rate": 1.0,
+      "routes_seen": [
+        "primary"
+      ],
+      "flaky": false
     },
     {
       "task_id": "flaky_order_lookup",
@@ -174,7 +185,18 @@
         }
       ],
       "notes": [],
-      "matched_path": "primary"
+      "matched_path": "primary",
+      "runs": 1,
+      "run_scores": [
+        1.0
+      ],
+      "spread": 0.0,
+      "stability": 1.0,
+      "run_pass_rate": 1.0,
+      "routes_seen": [
+        "primary"
+      ],
+      "flaky": false
     },
     {
       "task_id": "kb_password_reset",
@@ -261,7 +283,18 @@
         }
       ],
       "notes": [],
-      "matched_path": "primary"
+      "matched_path": "primary",
+      "runs": 1,
+      "run_scores": [
+        1.0
+      ],
+      "spread": 0.0,
+      "stability": 1.0,
+      "run_pass_rate": 1.0,
+      "routes_seen": [
+        "primary"
+      ],
+      "flaky": false
     },
     {
       "task_id": "order_lookup_recovery",
@@ -348,7 +381,18 @@
         }
       ],
       "notes": [],
-      "matched_path": "primary"
+      "matched_path": "primary",
+      "runs": 1,
+      "run_scores": [
+        1.0
+      ],
+      "spread": 0.0,
+      "stability": 1.0,
+      "run_pass_rate": 1.0,
+      "routes_seen": [
+        "primary"
+      ],
+      "flaky": false
     },
     {
       "task_id": "order_status_two_routes",
@@ -437,7 +481,18 @@
       "notes": [
         "matched the 'primary' route of 2 acceptable routes"
       ],
-      "matched_path": "primary"
+      "matched_path": "primary",
+      "runs": 1,
+      "run_scores": [
+        1.0
+      ],
+      "spread": 0.0,
+      "stability": 1.0,
+      "run_pass_rate": 1.0,
+      "routes_seen": [
+        "primary"
+      ],
+      "flaky": false
     },
     {
       "task_id": "refund_happy",
@@ -524,7 +579,18 @@
         }
       ],
       "notes": [],
-      "matched_path": "primary"
+      "matched_path": "primary",
+      "runs": 1,
+      "run_scores": [
+        1.0
+      ],
+      "spread": 0.0,
+      "stability": 1.0,
+      "run_pass_rate": 1.0,
+      "routes_seen": [
+        "primary"
+      ],
+      "flaky": false
     },
     {
       "task_id": "refund_ineligible",
@@ -611,7 +677,18 @@
         }
       ],
       "notes": [],
-      "matched_path": "primary"
+      "matched_path": "primary",
+      "runs": 1,
+      "run_scores": [
+        1.0
+      ],
+      "spread": 0.0,
+      "stability": 1.0,
+      "run_pass_rate": 1.0,
+      "routes_seen": [
+        "primary"
+      ],
+      "flaky": false
     }
   ]
 }
