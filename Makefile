@@ -21,6 +21,11 @@ red:            ## the regressed agent: gate blocks, exit 1
 flaky:          ## a deliberately unstable agent, run 5 times per task
 	-$(PY) -m trajgate run --agent v1.3-flaky --repeats 5 --no-gate
 
+induct:         ## write draft goldens from the good agent's own runs
+	$(PY) -m trajgate trace --agent v1.0-good --out out/good-traces.jsonl
+	$(PY) -m trajgate induct --traces out/good-traces.jsonl \
+		--tools demo_agent/tool_catalogue.txt --out-dir out/drafts
+
 baseline:       ## record the good agent as the baseline to be judged against
 	$(PY) -m trajgate run --agent v1.0-good --no-gate
 	$(PY) -m trajgate baseline --report out/report.json --out baselines/baseline.json

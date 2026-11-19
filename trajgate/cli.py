@@ -99,6 +99,45 @@ def cmd_trace(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_induct(a: argparse.Namespace) -> int:
+    from .induct import induct, to_yaml
+
+    grouped = runner.load_trajectories(a.traces)
+    if a.task_id:
+        if a.task_id not in grouped:
+            raise SystemExit(f"no trajectories for task {a.task_id!r} in "
+                             f"{a.traces}")
+        grouped = {a.task_id: grouped[a.task_id]}
+
+    catalogue = []
+    if a.tools:
+        catalogue = [t.strip() for t in Path(a.tools).read_text().split()
+                     if t.strip()]
+
+    out_dir = Path(a.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written = []
+    for task_id, runs in sorted(grouped.items()):
+        golden, bundle = induct(task_id, runs, prompt=a.prompt,
+                                tool_catalogue=catalogue)
+        text = to_yaml(golden, bundle,
+                       agent_version=runs[0].agent_version, run_count=len(runs))
+        path = out_dir / f"{task_id}.draft.yaml"
+        path.write_text(text)
+        written.append(path)
+        rep, _ = bundle
+        print(f"\n{path}")
+        for line in rep.inferred:
+            print(f"  inferred: {line}")
+        for line in rep.needs_review:
+            print(f"  REVIEW:   {line}")
+
+    print(f"\n{len(written)} draft golden(s) written to {out_dir}/")
+    print("These are DRAFTS. Read them, add the intent (forbidden_tools, "
+          "critical_tools, must_precede), then rename to .yaml and commit.")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="trajgate",
@@ -139,6 +178,20 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--report", default=DEF_REPORT)
     b.add_argument("--out", default=DEF_BASELINE)
     b.set_defaults(fn=cmd_baseline)
+
+    i = sub.add_parser(
+        "induct",
+        help="write draft goldens from runs you already have")
+    i.add_argument("--traces", required=True,
+                   help=".jsonl of trajectories you consider good")
+    i.add_argument("--task-id", default=None,
+                   help="just this task (default: every task in the file)")
+    i.add_argument("--prompt", default=None, help="the user's message")
+    i.add_argument("--tools", default=None,
+                   help="file listing every tool the agent has, so unused "
+                        "ones can be suggested as forbidden")
+    i.add_argument("--out-dir", default="goldens/drafts")
+    i.set_defaults(fn=cmd_induct)
 
     t = sub.add_parser("trace", help="dump raw trajectories for inspection")
     common(t)
