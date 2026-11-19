@@ -417,12 +417,31 @@ def looks_like_placeholder(value) -> bool:
     return any(re.search(pat, text) for pat in PLACEHOLDER_PATTERNS)
 
 
+def as_data(output):
+    """Tool outputs arrive as dicts from some harnesses and as JSON strings
+    from others - a real agent loop sends the model a string, because that is
+    what an API accepts. Grounding checks have to cope with both, or they
+    quietly stop working on exactly the traces that matter most.
+    """
+    if isinstance(output, (dict, list, tuple)):
+        return output
+    if isinstance(output, str):
+        text = output.strip()
+        if text[:1] in "{[":
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                return output
+    return output
+
+
 def _dig(data, path: str):
     """Follow a dotted path such as 'order_ids.0' through dicts and lists."""
-    cur = data
+    cur = as_data(data)
     for part in path.split("."):
         if part == "":
             continue
+        cur = as_data(cur)
         if isinstance(cur, dict):
             if part not in cur:
                 return (False, None)

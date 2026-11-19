@@ -197,3 +197,36 @@ def test_the_good_agent_grounds_every_argument():
     good = runner.run_suite(goldens, cfg, agent_version="v1.0-good")
     for t in good.tasks:
         assert t.score_map()["arg_quality"] == 1.0, t.task_id
+
+
+# --- real traces carry stringified outputs ---------------------------------
+
+def test_grounding_works_when_the_output_is_a_json_string():
+    """A real agent loop sends the model a string, because that is what an
+    API accepts, so the trace stores a string. Grounding must still work or
+    it quietly stops working on exactly the traces that matter."""
+    g = Golden(task_id="t", prompt="p", arg_quality=[
+        ArgQuality(tool="issue_refund", arg="amount",
+                   from_tool_output="get_order.amount", tolerance=0.01)])
+    t = run([("get_order", {"order_id": "A1001"}, '{"amount": 120.0}'),
+             ("issue_refund", {"amount": 120.0}, "{}")])
+    assert grade_arg_quality(t, g).score == 1.0
+
+
+def test_hallucination_is_still_caught_in_a_stringified_output():
+    g = Golden(task_id="t", prompt="p", arg_quality=[
+        ArgQuality(tool="issue_refund", arg="amount",
+                   from_tool_output="get_order.amount", tolerance=0.01)])
+    t = run([("get_order", {"order_id": "A1001"}, '{"amount": 120.0}'),
+             ("issue_refund", {"amount": 150.0}, "{}")])
+    s = grade_arg_quality(t, g)
+    assert any("HALLUCINATED ARGUMENT" in v for v in s.violations)
+
+
+def test_a_non_json_string_output_does_not_crash_grounding():
+    g = Golden(task_id="t", prompt="p", arg_quality=[
+        ArgQuality(tool="issue_refund", arg="amount",
+                   from_tool_output="get_order.amount")])
+    t = run([("get_order", {"order_id": "A1001"}, "order not found, sorry"),
+             ("issue_refund", {"amount": 120.0}, "{}")])
+    assert grade_arg_quality(t, g).score < 1.0

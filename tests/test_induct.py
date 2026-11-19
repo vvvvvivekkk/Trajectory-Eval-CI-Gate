@@ -213,3 +213,21 @@ def test_hand_written_goldens_still_score_the_good_agent_at_one():
     goldens = runner.load_goldens(ROOT / "goldens")
     s = runner.run_suite(goldens, cfg, agent_version="v1.0-good")
     assert s.mean_composite == 1.0
+
+
+def test_induction_finds_grounding_in_a_real_agent_trace():
+    """Induction has to work on traces from the real loop, where tool
+    outputs are JSON strings rather than dicts."""
+    from real_agent import ScriptedClient, run_task as real_run
+    from real_agent.client import call, turn
+
+    client = ScriptedClient([
+        turn(call("get_order", order_id="A1001")),
+        turn(call("check_refund_eligibility", order_id="A1001")),
+        turn(call("issue_refund", order_id="A1001", amount=120.0)),
+        turn(text="Refund of $120.00 approved for order A1001."),
+    ])
+    t = real_run("refund_happy", "refund A1001 please", client)
+    _, (rep, arg_quality) = induct("refund_happy", [t])
+    pairs = {(a["tool"], a["arg"], a["from_tool_output"]) for a in arg_quality}
+    assert ("issue_refund", "amount", "get_order.amount") in pairs

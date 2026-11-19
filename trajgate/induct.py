@@ -17,6 +17,7 @@ Read the draft. It is a starting point, not a specification.
 
 from __future__ import annotations
 
+import json
 import re
 import statistics
 from collections import Counter
@@ -58,6 +59,7 @@ def find_paths(output: Any, value: Any, prefix: str = "") -> list[str]:
     A list containing the value counts: get_customer returning
     {"order_ids": ["A1001"]} grounds get_order(order_id="A1001").
     """
+    output = _as_data(output)
     found: list[str] = []
     if _same(output, value):
         found.append(prefix)
@@ -68,6 +70,19 @@ def find_paths(output: Any, value: Any, prefix: str = "") -> list[str]:
         if any(_same(v, value) for v in output):
             found.append(prefix)
     return [p for p in found if p != ""]
+
+
+def _as_data(output: Any) -> Any:
+    """Parse a JSON-string tool output, so induction works on real traces
+    as well as on in-process ones. Same reason as trajgate.graders.as_data."""
+    if isinstance(output, str):
+        text = output.strip()
+        if text[:1] in "{[":
+            try:
+                return json.loads(text)
+            except json.JSONDecodeError:
+                return output
+    return output
 
 
 def _same(a: Any, b: Any) -> bool:

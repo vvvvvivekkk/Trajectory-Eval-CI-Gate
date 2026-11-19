@@ -21,6 +21,10 @@ red:            ## the regressed agent: gate blocks, exit 1
 flaky:          ## a deliberately unstable agent, run 5 times per task
 	-$(PY) -m trajgate run --agent v1.3-flaky --repeats 5 --no-gate
 
+real:           ## run the REAL LLM agent (needs ANTHROPIC_API_KEY) and grade it
+	$(PY) -m real_agent.run --provider anthropic --out out/real-traces.jsonl
+	$(PY) -m trajgate run --traces out/real-traces.jsonl
+
 induct:         ## write draft goldens from the good agent's own runs
 	$(PY) -m trajgate trace --agent v1.0-good --out out/good-traces.jsonl
 	$(PY) -m trajgate induct --traces out/good-traces.jsonl \

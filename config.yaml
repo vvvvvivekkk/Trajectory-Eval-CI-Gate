@@ -23,6 +23,10 @@ pricing:
       usd_per_m_in: 3.00
       usd_per_m_out: 15.00
       note: invented prices for the offline demo, not a real model
+    scripted-model:
+      usd_per_m_in: 3.00
+      usd_per_m_out: 15.00
+      note: the ScriptedClient used by real_agent tests
 
 # The optional LLM judge, for answers that string assertions cannot check
 # (tone, whether a refusal was actually explained). Off by default: a grader
