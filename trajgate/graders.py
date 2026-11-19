@@ -28,6 +28,7 @@ from .schema import (
     Expect,
     Golden,
     GraderScore,
+    PathVariant,
     Step,
     StepKind,
     TaskResult,
@@ -102,7 +103,8 @@ def grade_outcome(traj: Trajectory, golden: Golden) -> GraderScore:
 # 2. tool_selection - did it use the right tools?
 # ---------------------------------------------------------------------------
 
-def grade_tool_selection(traj: Trajectory, golden: Golden) -> GraderScore:
+def grade_tool_selection(traj: Trajectory,
+                         golden: Golden | PathVariant) -> GraderScore:
     actual = traj.call_names()
     required = golden.required_tools
     allowed = set(required) | set(golden.optional_tools)
@@ -139,7 +141,8 @@ def grade_tool_selection(traj: Trajectory, golden: Golden) -> GraderScore:
 # 3. order - in a sensible sequence?
 # ---------------------------------------------------------------------------
 
-def grade_order(traj: Trajectory, golden: Golden) -> GraderScore:
+def grade_order(traj: Trajectory,
+                golden: Golden | PathVariant) -> GraderScore:
     if not golden.order_matters:
         return GraderScore(name="order", score=1.0, weight=0.0,
                            detail="sequence not graded for this task")
@@ -180,7 +183,8 @@ def grade_order(traj: Trajectory, golden: Golden) -> GraderScore:
 # 4. efficiency - did it get there without wandering?
 # ---------------------------------------------------------------------------
 
-def grade_efficiency(traj: Trajectory, golden: Golden) -> GraderScore:
+def grade_efficiency(traj: Trajectory,
+                     golden: Golden | PathVariant) -> GraderScore:
     ideal = golden.ideal()
     actual = len(traj.calls())
     violations: list[str] = []
@@ -393,9 +397,22 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskRe
     w = cfg.weights
 
     outcome = grade_outcome(traj, golden)
-    selection = grade_tool_selection(traj, golden)
-    order = grade_order(traj, golden)
-    efficiency = grade_efficiency(traj, golden)
+
+    # Score the path against every acceptable route and keep the best match.
+    # "Best" is judged on the three path-shaped graders together, so a run is
+    # never credited with the tool score of one route and the order score of
+    # another.
+    best: tuple[float, str, GraderScore, GraderScore, GraderScore] | None = None
+    for variant in golden.path_variants():
+        sel = grade_tool_selection(traj, variant)
+        ordr = grade_order(traj, variant)
+        eff = grade_efficiency(traj, variant)
+        key = (sel.score * w.tool_selection + ordr.score * w.order
+               + eff.score * w.efficiency)
+        if best is None or key > best[0]:
+            best = (key, variant.name, sel, ordr, eff)
+
+    _, matched_path, selection, order, efficiency = best  # type: ignore[misc]
     redundancy = grade_redundancy(traj, golden)
     recovery = grade_recovery(traj, golden)
     safety, hard_fail = grade_safety(traj, golden)
@@ -426,6 +443,9 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskRe
     passed = composite >= golden.pass_threshold and not hard_fail
 
     notes: list[str] = []
+    if len(golden.path_variants()) > 1:
+        notes.append(f"matched the '{matched_path}' route of "
+                     f"{len(golden.path_variants())} acceptable routes")
     if lucky:
         notes.append(
             f"LUCKY PASS: the answer is right but the path scored "
@@ -453,4 +473,5 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskRe
         usd_cost=round(traj.usd_cost, 6),
         scores=scores,
         notes=notes,
+        matched_path=matched_path,
     )

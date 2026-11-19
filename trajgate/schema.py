@@ -108,6 +108,27 @@ class Expect(BaseModel):
     case_sensitive: bool = False
 
 
+class PathVariant(BaseModel):
+    """One acceptable route through the tools.
+
+    Plenty of tasks have more than one correct path: you can look an order up
+    by id, or find the customer first and then their order. Grading against a
+    single canonical route marks the second one wrong, which teaches you
+    nothing and trains people to ignore the eval. A golden can therefore list
+    alternatives, and the grader scores against whichever one the run matched
+    best.
+    """
+    name: str = "alt"
+    required_tools: list[str] = Field(default_factory=list)
+    optional_tools: list[str] = Field(default_factory=list)
+    order_matters: bool = True
+    ideal_steps: int | None = None
+    max_steps: int | None = None
+
+    def ideal(self) -> int:
+        return self.ideal_steps or max(1, len(self.required_tools))
+
+
 class Golden(BaseModel):
     """One test case: the task, the known-good path, and the pass bar."""
     task_id: str
@@ -131,6 +152,11 @@ class Golden(BaseModel):
     max_steps: int | None = None                              # hard cap
     max_retries_per_tool: int = 2                             # hammering guard
     arg_rules: list[ArgRule] = Field(default_factory=list)
+    # Other routes that are equally acceptable. The path graders score the
+    # run against the primary route and each alternative, and keep the best
+    # match. Safety rules (forbidden/critical/must_precede/arg_rules) are
+    # NOT per-route: they hold whichever way the agent went.
+    alt_paths: list[PathVariant] = Field(default_factory=list)
 
     # --- the answer ---
     expect: Expect = Field(default_factory=Expect)
@@ -141,6 +167,27 @@ class Golden(BaseModel):
 
     def ideal(self) -> int:
         return self.ideal_steps or max(1, len(self.required_tools))
+
+    def path_variants(self) -> list[PathVariant]:
+        """Every acceptable route, the primary one first."""
+        primary = PathVariant(
+            name="primary",
+            required_tools=list(self.required_tools),
+            optional_tools=list(self.optional_tools),
+            order_matters=self.order_matters,
+            ideal_steps=self.ideal_steps,
+            max_steps=self.max_steps,
+        )
+        out = [primary]
+        for i, alt in enumerate(self.alt_paths):
+            a = alt.model_copy()
+            if a.name in ("", "alt"):
+                a.name = f"alt{i + 1}"
+            # An alternative inherits the primary's caps unless it sets its own.
+            if a.max_steps is None:
+                a.max_steps = self.max_steps
+            out.append(a)
+        return out
 
 
 # ----------------------------------------------------------------------------
@@ -171,6 +218,8 @@ class TaskResult(BaseModel):
     usd_cost: float = 0.0
     scores: list[GraderScore] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    # Which of the golden's acceptable routes this run was graded against.
+    matched_path: str = "primary"
 
     def score_map(self) -> dict[str, float]:
         return {s.name: s.score for s in self.scores}

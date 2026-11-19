@@ -25,6 +25,7 @@ class TaskDelta(BaseModel):
     hard_fail: bool = False
     steps_delta_pct: float | None = None
     cost_delta_pct: float | None = None
+    route_changed: bool = False
     blocking_reasons: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
@@ -99,18 +100,38 @@ def evaluate(current: SuiteResult, baseline: SuiteResult | None,
                 "new LUCKY PASS: right answer reached by a bad path "
                 f"(path score {cur.path_score:.2f})"
             )
-        if (b and th.block_on_cost_regression and d.cost_delta_pct is not None
-                and d.cost_delta_pct > th.max_cost_increase_pct):
-            d.blocking_reasons.append(
-                f"token use up {d.cost_delta_pct:.0f}% (limit "
-                f"{th.max_cost_increase_pct:.0f}%)"
-            )
-        if (b and th.block_on_cost_regression and d.steps_delta_pct is not None
-                and d.steps_delta_pct > th.max_steps_increase_pct):
-            d.blocking_reasons.append(
-                f"tool calls up {d.steps_delta_pct:.0f}% (limit "
-                f"{th.max_steps_increase_pct:.0f}%)"
-            )
+        # Cost and step creep are only a like-for-like comparison when the
+        # run took the same route as the baseline. If the golden accepts
+        # several routes and the agent switched to another allowed one, a
+        # different cost is expected, not a regression - so it is reported
+        # rather than blocked. Absolute budgets (max_tokens, max_usd_cost on
+        # the golden) are what guard against an expensive route.
+        same_route = bool(b) and cur.matched_path == b.matched_path
+        d.route_changed = bool(b) and not same_route
+        cost_over = (d.cost_delta_pct is not None
+                     and d.cost_delta_pct > th.max_cost_increase_pct)
+        steps_over = (d.steps_delta_pct is not None
+                      and d.steps_delta_pct > th.max_steps_increase_pct)
+
+        if b and th.block_on_cost_regression and cost_over:
+            msg = (f"token use up {d.cost_delta_pct:.0f}% (limit "
+                   f"{th.max_cost_increase_pct:.0f}%)")
+            if same_route:
+                d.blocking_reasons.append(msg)
+            else:
+                d.warnings.append(
+                    f"{msg}, but the route changed from "
+                    f"'{b.matched_path}' to '{cur.matched_path}' - not a "
+                    f"like-for-like comparison, so not blocking")
+        if b and th.block_on_cost_regression and steps_over:
+            msg = (f"tool calls up {d.steps_delta_pct:.0f}% (limit "
+                   f"{th.max_steps_increase_pct:.0f}%)")
+            if same_route:
+                d.blocking_reasons.append(msg)
+            else:
+                d.warnings.append(
+                    f"{msg}, but on a different accepted route "
+                    f"('{b.matched_path}' -> '{cur.matched_path}')")
 
         # --- things worth saying but not blocking ---------------------------
         if not b:

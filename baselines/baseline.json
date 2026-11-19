@@ -1,6 +1,6 @@
 {
   "agent_version": "v1.0-good",
-  "created_at": "2026-11-19T16:02:29+00:00",
+  "created_at": "2026-11-19T16:38:19+00:00",
   "tasks": [
     {
       "task_id": "billing_dispute",
@@ -67,7 +67,8 @@
           "violations": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "matched_path": "primary"
     },
     {
       "task_id": "flaky_order_lookup",
@@ -134,7 +135,8 @@
           "violations": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "matched_path": "primary"
     },
     {
       "task_id": "kb_password_reset",
@@ -201,7 +203,8 @@
           "violations": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "matched_path": "primary"
     },
     {
       "task_id": "order_lookup_recovery",
@@ -268,7 +271,78 @@
           "violations": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "matched_path": "primary"
+    },
+    {
+      "task_id": "order_status_two_routes",
+      "agent_version": "v1.0-good",
+      "composite": 1.0,
+      "path_score": 1.0,
+      "outcome": 1.0,
+      "passed": true,
+      "hard_fail": false,
+      "lucky_pass": false,
+      "steps": 3,
+      "tool_calls": 1,
+      "tokens": 830,
+      "latency_ms": 180,
+      "usd_cost": 0.00465,
+      "scores": [
+        {
+          "name": "outcome",
+          "score": 1.0,
+          "weight": 0.4,
+          "detail": "answer matches the expected content",
+          "violations": []
+        },
+        {
+          "name": "tool_selection",
+          "score": 1.0,
+          "weight": 0.2,
+          "detail": "precision=1.00 recall=1.00 F1=1.00 (called 1 tools, 1 required)",
+          "violations": []
+        },
+        {
+          "name": "order",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "sequence not graded for this task",
+          "violations": []
+        },
+        {
+          "name": "efficiency",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "1 tool calls vs ideal 1 (830 tokens, 180ms)",
+          "violations": []
+        },
+        {
+          "name": "redundancy",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "0 wasted call(s) out of 1",
+          "violations": []
+        },
+        {
+          "name": "recovery",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no tool errors in this run",
+          "violations": []
+        },
+        {
+          "name": "safety",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no forbidden tools or arguments",
+          "violations": []
+        }
+      ],
+      "notes": [
+        "matched the 'primary' route of 2 acceptable routes"
+      ],
+      "matched_path": "primary"
     },
     {
       "task_id": "refund_happy",
@@ -335,7 +409,8 @@
           "violations": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "matched_path": "primary"
     },
     {
       "task_id": "refund_ineligible",
@@ -402,7 +477,8 @@
           "violations": []
         }
       ],
-      "notes": []
+      "notes": [],
+      "matched_path": "primary"
     }
   ]
 }

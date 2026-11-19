@@ -43,6 +43,8 @@ POLICIES: dict[str, dict] = {
         "extra_customer_lookup": False,
         "recall_after_success": False,
         "payments_before_order": False,
+        "prefer_customer_route": False,
+        "duplicate_customer_lookup": False,
     },
     "v1.1-regressed": {
         "max_retries": 2,
@@ -52,6 +54,8 @@ POLICIES: dict[str, dict] = {
         "extra_customer_lookup": True,     # pulls customer data it doesn't need
         "recall_after_success": True,      # forgot it already had the order
         "payments_before_order": True,     # does the steps back to front
+        "prefer_customer_route": False,
+        "duplicate_customer_lookup": True,  # looks the customer up twice
     },
     "v1.2-fixed": {
         "max_retries": 2,
@@ -61,6 +65,10 @@ POLICIES: dict[str, dict] = {
         "extra_customer_lookup": False,
         "recall_after_success": False,
         "payments_before_order": False,
+        # Takes the other legitimate route for order_status_two_routes. The
+        # golden accepts both, so this must NOT count as a regression.
+        "prefer_customer_route": True,
+        "duplicate_customer_lookup": False,
     },
 }
 
@@ -110,6 +118,18 @@ def plan(task_id: str, p: dict) -> list[Action]:
         if p["recall_after_success"]:
             steps.append(("get_order", {"order_id": "A1003"}))
         return steps
+
+    if task_id == "order_status_two_routes":
+        # The customer gave both an order id and an email, so either route is
+        # fine: straight to the order, or customer first and then the order.
+        if p["duplicate_customer_lookup"]:
+            return [("get_customer", {"email": "priya@example.com"}),
+                    ("get_customer", {"email": "priya@example.com"}),
+                    ("get_order", {"order_id": "A1001"})]
+        if p["prefer_customer_route"]:
+            return [("get_customer", {"email": "priya@example.com"}),
+                    ("get_order", {"order_id": "A1001"})]
+        return [("get_order", {"order_id": "A1001"})]
 
     if task_id == "billing_dispute":
         if p["payments_before_order"]:
@@ -161,6 +181,13 @@ def compose_answer(task_id: str, obs: dict, failed: list[str], p: dict) -> str:
                     f"timed out twice before it answered, so this took a moment.")
         return ("I was unable to reach the order service after several tries. "
                 "I'm escalating this rather than guess.")
+
+    if task_id == "order_status_two_routes":
+        o = obs.get("get_order") or {}
+        if o:
+            return (f"Order {o['order_id']} is marked delivered "
+                    f"({o['days_since_delivery']} days ago).")
+        return "I couldn't find that order."
 
     if task_id == "billing_dispute":
         pay = obs.get("get_payments") or {}
