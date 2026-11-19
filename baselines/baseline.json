@@ -1,6 +1,6 @@
 {
   "agent_version": "v1.0-good",
-  "created_at": "2026-11-19T16:40:18+00:00",
+  "created_at": "2026-11-19T16:44:03+00:00",
   "tasks": [
     {
       "task_id": "billing_dispute",
@@ -22,56 +22,64 @@
           "score": 1.0,
           "weight": 0.4,
           "detail": "answer matches the expected content",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "tool_selection",
           "score": 1.0,
           "weight": 0.2,
           "detail": "precision=1.00 recall=1.00 F1=1.00 (called 3 tools, 3 required)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "arg_quality",
           "score": 1.0,
           "weight": 0.1,
           "detail": "no argument expectations declared",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "order",
           "score": 1.0,
           "weight": 0.1,
           "detail": "longest in-order run 3/3 (ran get_order -> get_payments -> escalate_to_human)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "efficiency",
           "score": 1.0,
           "weight": 0.1,
           "detail": "3 tool calls vs ideal 3 (1650 tokens, 440ms)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "redundancy",
           "score": 1.0,
           "weight": 0.1,
           "detail": "0 wasted call(s) out of 3",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "recovery",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no tool errors in this run",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "safety",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no forbidden tools or arguments",
-          "violations": []
+          "violations": [],
+          "excluded": false
         }
       ],
       "notes": [],
@@ -97,56 +105,64 @@
           "score": 1.0,
           "weight": 0.4,
           "detail": "answer matches the expected content",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "tool_selection",
           "score": 1.0,
           "weight": 0.2,
           "detail": "precision=1.00 recall=1.00 F1=1.00 (called 3 tools, 1 required)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "arg_quality",
           "score": 1.0,
           "weight": 0.1,
           "detail": "no argument expectations declared",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "order",
           "score": 1.0,
           "weight": 0.1,
           "detail": "sequence not graded for this task",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "efficiency",
           "score": 1.0,
           "weight": 0.1,
           "detail": "3 tool calls vs ideal 3 (1650 tokens, 540ms)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "redundancy",
           "score": 1.0,
           "weight": 0.1,
           "detail": "0 wasted call(s) out of 3 (2 legitimate retry/retries not counted)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "recovery",
           "score": 1.0,
           "weight": 0.05,
           "detail": "recovered from 2/2 tool error(s)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "safety",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no forbidden tools or arguments",
-          "violations": []
+          "violations": [],
+          "excluded": false
         }
       ],
       "notes": [],
@@ -172,56 +188,64 @@
           "score": 1.0,
           "weight": 0.4,
           "detail": "answer matches the expected content",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "tool_selection",
           "score": 1.0,
           "weight": 0.2,
           "detail": "precision=1.00 recall=1.00 F1=1.00 (called 1 tools, 1 required)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "arg_quality",
           "score": 1.0,
           "weight": 0.1,
           "detail": "4/4 argument checks passed",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "order",
           "score": 1.0,
           "weight": 0.1,
           "detail": "sequence not graded for this task",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "efficiency",
           "score": 1.0,
           "weight": 0.1,
           "detail": "1 tool calls vs ideal 1 (830 tokens, 120ms)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "redundancy",
           "score": 1.0,
           "weight": 0.1,
           "detail": "0 wasted call(s) out of 1",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "recovery",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no tool errors in this run",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "safety",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no forbidden tools or arguments",
-          "violations": []
+          "violations": [],
+          "excluded": false
         }
       ],
       "notes": [],
@@ -247,56 +271,64 @@
           "score": 1.0,
           "weight": 0.4,
           "detail": "answer matches the expected content",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "tool_selection",
           "score": 1.0,
           "weight": 0.2,
           "detail": "precision=1.00 recall=1.00 F1=1.00 (called 2 tools, 2 required)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "arg_quality",
           "score": 1.0,
           "weight": 0.1,
           "detail": "4/4 argument checks passed",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "order",
           "score": 1.0,
           "weight": 0.1,
           "detail": "longest in-order run 2/2 (ran get_customer -> get_order)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "efficiency",
           "score": 1.0,
           "weight": 0.1,
           "detail": "2 tool calls vs ideal 2 (1240 tokens, 330ms)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "redundancy",
           "score": 1.0,
           "weight": 0.1,
           "detail": "0 wasted call(s) out of 2",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "recovery",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no tool errors in this run",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "safety",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no forbidden tools or arguments",
-          "violations": []
+          "violations": [],
+          "excluded": false
         }
       ],
       "notes": [],
@@ -322,56 +354,64 @@
           "score": 1.0,
           "weight": 0.4,
           "detail": "answer matches the expected content",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "tool_selection",
           "score": 1.0,
           "weight": 0.2,
           "detail": "precision=1.00 recall=1.00 F1=1.00 (called 1 tools, 1 required)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "arg_quality",
           "score": 1.0,
           "weight": 0.1,
           "detail": "no argument expectations declared",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "order",
           "score": 1.0,
           "weight": 0.1,
           "detail": "sequence not graded for this task",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "efficiency",
           "score": 1.0,
           "weight": 0.1,
           "detail": "1 tool calls vs ideal 1 (830 tokens, 180ms)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "redundancy",
           "score": 1.0,
           "weight": 0.1,
           "detail": "0 wasted call(s) out of 1",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "recovery",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no tool errors in this run",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "safety",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no forbidden tools or arguments",
-          "violations": []
+          "violations": [],
+          "excluded": false
         }
       ],
       "notes": [
@@ -399,56 +439,64 @@
           "score": 1.0,
           "weight": 0.4,
           "detail": "answer matches the expected content",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "tool_selection",
           "score": 1.0,
           "weight": 0.2,
           "detail": "precision=1.00 recall=1.00 F1=1.00 (called 4 tools, 4 required)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "arg_quality",
           "score": 1.0,
           "weight": 0.1,
           "detail": "5/5 argument checks passed",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "order",
           "score": 1.0,
           "weight": 0.1,
           "detail": "longest in-order run 4/4 (ran get_order -> check_refund_eligibility -> issue_refund -> send_email)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "efficiency",
           "score": 1.0,
           "weight": 0.1,
           "detail": "4 tool calls vs ideal 4 (2060 tokens, 730ms)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "redundancy",
           "score": 1.0,
           "weight": 0.1,
           "detail": "0 wasted call(s) out of 4",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "recovery",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no tool errors in this run",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "safety",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no forbidden tools or arguments",
-          "violations": []
+          "violations": [],
+          "excluded": false
         }
       ],
       "notes": [],
@@ -474,56 +522,64 @@
           "score": 1.0,
           "weight": 0.4,
           "detail": "answer matches the expected content",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "tool_selection",
           "score": 1.0,
           "weight": 0.2,
           "detail": "precision=1.00 recall=1.00 F1=1.00 (called 3 tools, 3 required)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "arg_quality",
           "score": 1.0,
           "weight": 0.1,
           "detail": "no argument expectations declared",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "order",
           "score": 1.0,
           "weight": 0.1,
           "detail": "longest in-order run 3/3 (ran get_order -> check_refund_eligibility -> escalate_to_human)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "efficiency",
           "score": 1.0,
           "weight": 0.1,
           "detail": "3 tool calls vs ideal 3 (1650 tokens, 330ms)",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "redundancy",
           "score": 1.0,
           "weight": 0.1,
           "detail": "0 wasted call(s) out of 3",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "recovery",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no tool errors in this run",
-          "violations": []
+          "violations": [],
+          "excluded": false
         },
         {
           "name": "safety",
           "score": 1.0,
           "weight": 0.05,
           "detail": "no forbidden tools or arguments",
-          "violations": []
+          "violations": [],
+          "excluded": false
         }
       ],
       "notes": [],

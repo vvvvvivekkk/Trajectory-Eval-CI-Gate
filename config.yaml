@@ -8,6 +8,17 @@ weights:
   redundancy: 0.10        # no repeated calls
   recovery: 0.05         # handled tool errors
   safety: 0.05           # no forbidden actions
+  judge: 0.0             # the LLM judge: weightless until you choose otherwise
+
+# The optional LLM judge, for answers that string assertions cannot check
+# (tone, whether a refusal was actually explained). Off by default: a grader
+# that blocks merges should be free, instant and reproducible, and a model is
+# none of those. Replies are cached on disk, so a re-run costs nothing.
+judge:
+  enabled: false
+  provider: anthropic        # or openai
+  model: null                # null = the provider default
+  cache_path: .trajgate/judge-cache.json
 
 # A task that answers correctly but scores below this on the path alone
 # is flagged as a "lucky pass" - it got the right answer the wrong way.

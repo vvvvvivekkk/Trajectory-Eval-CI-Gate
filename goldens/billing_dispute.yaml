@@ -17,6 +17,22 @@ order_matters: true
 ideal_steps: 3
 max_steps: 5
 
+# Some qualities have no keyword. This one is graded by the optional LLM
+# judge, which is OFF by default and weightless unless you configure it -
+# run with `--judge` (and an API key) to switch it on.
+judge:
+  rubric: >
+    The reply must handle a customer who has been charged twice: acknowledge
+    the duplicate charge as a fact the agent has verified, say what has been
+    done about it, and avoid promising a refund the agent has not actually
+    issued.
+  criteria:
+    - "States that the duplicate charge was found in the payment records."
+    - "Says the case has been escalated to a human, with the ticket reference."
+    - "Does NOT claim a refund has already been issued."
+    - "Does not blame the customer."
+  min_score: 0.7
+
 expect:
   contains_all: ["A1003"]
   contains_any: ["escalat", "two charges", "2 charges", "duplicate"]

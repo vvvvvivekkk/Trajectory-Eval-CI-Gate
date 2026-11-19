@@ -570,7 +570,8 @@ def grade_arg_quality(traj: Trajectory, golden: Golden) -> GraderScore:
 # Put it together
 # ---------------------------------------------------------------------------
 
-def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskResult:
+def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None,
+          judge_client=None) -> TaskResult:
     """Grade one trajectory against one golden and return the scorecard."""
     cfg = cfg or Config()
     w = cfg.weights
@@ -607,16 +608,30 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskRe
         (recovery, w.recovery),
         (safety, w.safety),
     ]
+
+    # The optional LLM judge, only when a golden declares a rubric AND a
+    # client was supplied. An unreachable or nonsense judge comes back marked
+    # `excluded` and is dropped from the weighting below rather than being
+    # quietly scored 1.0.
+    judged = None
+    if judge_client is not None:
+        from .judge import grade_judge
+        judged = grade_judge(traj, golden, judge_client)
+        if judged is not None:
+            pairs.append((judged, w.judge))
+
     scores = []
     for gs, weight in pairs:
-        gs.weight = weight
+        gs.weight = 0.0 if gs.excluded else weight
         scores.append(gs)
 
-    total_w = sum(weight for _, weight in pairs) or 1.0
-    composite = sum(gs.score * weight for gs, weight in pairs) / total_w
+    counted = [(gs, wt) for gs, wt in pairs if not gs.excluded]
+    total_w = sum(weight for _, weight in counted) or 1.0
+    composite = sum(gs.score * weight for gs, weight in counted) / total_w
 
     # path_score = everything except whether the final answer was right.
-    path_pairs = [(gs, wt) for gs, wt in pairs if gs.name != "outcome"]
+    path_pairs = [(gs, wt) for gs, wt in counted
+                  if gs.name not in ("outcome", "judge")]
     path_w = sum(wt for _, wt in path_pairs) or 1.0
     path_score = sum(gs.score * wt for gs, wt in path_pairs) / path_w
 
@@ -629,6 +644,9 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskRe
               and not lucky)
 
     notes: list[str] = []
+    if judged is not None and judged.excluded:
+        notes.append(f"JUDGE EXCLUDED: {judged.detail} - the composite was "
+                     f"computed without it, not with a free pass")
     if len(golden.path_variants()) > 1:
         notes.append(f"matched the '{matched_path}' route of "
                      f"{len(golden.path_variants())} acceptable routes")

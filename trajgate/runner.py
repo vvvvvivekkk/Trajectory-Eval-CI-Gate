@@ -55,13 +55,26 @@ def _median_result(results: list[TaskResult]) -> TaskResult:
     return ordered[len(ordered) // 2]
 
 
+def build_judge(cfg: Config):
+    """The judge client, or None when it is switched off (the default)."""
+    if not cfg.judge.enabled:
+        return None
+    from .judge import build_client
+    return build_client(cfg.judge.provider, cfg.judge.model,
+                        cfg.judge.cache_path)
+
+
 def run_suite(
     goldens: list[Golden],
     cfg: Config,
     agent_version: str = "v1.0-good",
     traces: dict[str, list[Trajectory]] | None = None,
+    judge_client=None,
 ) -> SuiteResult:
     from demo_agent import run_task  # imported lazily so traces mode needs no agent
+
+    if judge_client is None:
+        judge_client = build_judge(cfg)
 
     tasks: list[TaskResult] = []
     for g in goldens:
@@ -73,11 +86,11 @@ def run_suite(
                     f"no trajectory in the trace file for task {g.task_id!r}"
                 )
             for t in found:
-                runs.append(grade(t, g, cfg))
+                runs.append(grade(t, g, cfg, judge_client))
         else:
             for i in range(max(1, cfg.repeats)):
                 traj = run_task(g.task_id, agent_version, run_id=f"run-{i+1}")
-                runs.append(grade(traj, g, cfg))
+                runs.append(grade(traj, g, cfg, judge_client))
         res = _median_result(runs)
         if len(runs) > 1:
             spread = max(r.composite for r in runs) - min(r.composite for r in runs)

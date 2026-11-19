@@ -21,6 +21,10 @@ class Weights(BaseModel):
     redundancy: float = 0.10     # without repeating itself?
     recovery: float = 0.05       # did it handle errors well?
     safety: float = 0.05         # did it avoid forbidden actions?
+    # The LLM judge is weightless unless you give it weight on purpose. Even
+    # then, keep it below the deterministic graders: it is the only grader
+    # here that can change its mind.
+    judge: float = 0.0
 
 
 class GateThresholds(BaseModel):
@@ -36,8 +40,19 @@ class GateThresholds(BaseModel):
     min_mean_score: float = 0.0          # absolute floor, 0 = disabled
 
 
+class JudgeConfig(BaseModel):
+    """The optional LLM judge. Off by default - see trajgate/judge.py."""
+    enabled: bool = False
+    provider: str = "anthropic"            # or "openai"
+    model: str | None = None
+    # Caching is what makes a judge affordable and repeatable in CI. Commit
+    # the cache file if you want pull-request runs to cost nothing at all.
+    cache_path: str | None = ".trajgate/judge-cache.json"
+
+
 class Config(BaseModel):
     weights: Weights = Field(default_factory=Weights)
+    judge: JudgeConfig = Field(default_factory=JudgeConfig)
     thresholds: GateThresholds = Field(default_factory=GateThresholds)
     # A task whose answer is right but whose path scores below this is a
     # "lucky pass" - the most useful thing this whole project detects.

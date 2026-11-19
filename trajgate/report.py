@@ -12,9 +12,18 @@ from .schema import SuiteResult
 GRADER_ORDER = ["outcome", "tool_selection", "arg_quality", "order", "efficiency",
                 "redundancy", "recovery", "safety"]
 SHORT = {"outcome": "answer", "tool_selection": "tools",
-         "arg_quality": "args", "order": "order",
+         "arg_quality": "args", "order": "order", "judge": "judge",
          "efficiency": "effic", "redundancy": "redund", "recovery": "recov",
          "safety": "safety"}
+
+
+def graders_present(suite) -> list[str]:
+    """The grader columns to show - the judge appears only when it ran."""
+    seen = {s.name for t in suite.tasks for s in t.scores}
+    cols = [g for g in GRADER_ORDER if g in seen]
+    if "judge" in seen:
+        cols.append("judge")
+    return cols or GRADER_ORDER
 
 
 def _flags(t) -> str:
@@ -77,7 +86,8 @@ def markdown(suite: SuiteResult, decision: GateDecision) -> str:
         out += [f"- {r}" for r in decision.reasons]
         out.append("")
 
-    cols = ["task", "score", "Δ"] + [SHORT[g] for g in GRADER_ORDER] + ["calls", "flags"]
+    present = graders_present(suite)
+    cols = ["task", "score", "Δ"] + [SHORT.get(g, g) for g in present] + ["calls", "flags"]
     out.append("| " + " | ".join(cols) + " |")
     out.append("|" + "|".join(["---"] * len(cols)) + "|")
     dmap = {d.task_id: d for d in decision.deltas}
@@ -86,7 +96,7 @@ def markdown(suite: SuiteResult, decision: GateDecision) -> str:
         delta = f"{d.delta:+.3f}" if d and d.baseline is not None else "new"
         sm = t.score_map()
         row = [f"`{t.task_id}`", f"**{t.composite:.3f}**", delta]
-        row += [f"{sm.get(g, 0):.2f}" for g in GRADER_ORDER]
+        row += [f"{sm.get(g, 0):.2f}" for g in present]
         row += [str(t.tool_calls), _flags(t)]
         out.append("| " + " | ".join(row) + " |")
     out.append("")
@@ -124,6 +134,7 @@ def _bar(v: float) -> str:
 
 
 def html_report(suite: SuiteResult, decision: GateDecision) -> str:
+    present = graders_present(suite)
     rows = []
     dmap = {d.task_id: d for d in decision.deltas}
     for t in suite.tasks:
@@ -133,7 +144,7 @@ def html_report(suite: SuiteResult, decision: GateDecision) -> str:
         sm = t.score_map()
         cells = "".join(
             f'<td class="num">{sm.get(g,0):.2f}{_bar(sm.get(g,0))}</td>'
-            for g in GRADER_ORDER)
+            for g in present)
         notes = "<br>".join(html.escape(n) for n in t.notes) or "-"
         rows.append(
             f"<tr><td><code>{html.escape(t.task_id)}</code></td>"
@@ -146,7 +157,7 @@ def html_report(suite: SuiteResult, decision: GateDecision) -> str:
 
     reasons = "".join(f"<li>{html.escape(r)}</li>" for r in decision.reasons)
     warns = "".join(f"<li>{html.escape(w)}</li>" for w in decision.warnings)
-    heads = "".join(f"<th>{SHORT[g]}</th>" for g in GRADER_ORDER)
+    heads = "".join(f"<th>{SHORT.get(g, g)}</th>" for g in present)
     verdict = "BLOCKED" if decision.blocked else "PASSED"
     vclass = "blocked" if decision.blocked else "passed"
     baseline_txt = (f"baseline {decision.mean_baseline:.3f} "

@@ -39,6 +39,12 @@ def cmd_run(a: argparse.Namespace) -> int:
     cfg = Config.load(a.config)
     if a.repeats:
         cfg.repeats = a.repeats
+    if a.judge:
+        cfg.judge.enabled = True
+    if a.judge_provider:
+        cfg.judge.provider = a.judge_provider
+    if a.judge_model:
+        cfg.judge.model = a.judge_model
     goldens = runner.load_goldens(a.goldens)
 
     traces = runner.load_trajectories(a.traces) if a.traces else None
@@ -116,6 +122,11 @@ def build_parser() -> argparse.ArgumentParser:
                    help="runs per task; the median is reported")
     r.add_argument("--no-gate", action="store_true",
                    help="report but always exit 0")
+    r.add_argument("--judge", action="store_true",
+                   help="enable the optional LLM judge (needs an API key)")
+    r.add_argument("--judge-provider", default=None,
+                   choices=["anthropic", "openai"])
+    r.add_argument("--judge-model", default=None)
     r.set_defaults(fn=cmd_run)
 
     g = sub.add_parser("gate", help="apply the gate to an existing report")

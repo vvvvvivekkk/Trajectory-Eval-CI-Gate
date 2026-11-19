@@ -155,6 +155,17 @@ class PathVariant(BaseModel):
         return self.ideal_steps or max(1, len(self.required_tools))
 
 
+class JudgeSpec(BaseModel):
+    """A rubric for the optional LLM judge, for answers assertions can't check.
+
+    Use it for the qualities that have no keyword - tone, whether a refusal
+    was explained, whether an explanation actually addressed the question.
+    """
+    rubric: str
+    criteria: list[str] = Field(default_factory=list)
+    min_score: float = 0.70
+
+
 class Golden(BaseModel):
     """One test case: the task, the known-good path, and the pass bar."""
     task_id: str
@@ -187,6 +198,7 @@ class Golden(BaseModel):
 
     # --- the answer ---
     expect: Expect = Field(default_factory=Expect)
+    judge: JudgeSpec | None = None
 
     # --- the bar ---
     pass_threshold: float = 0.80       # composite score needed to "pass"
@@ -227,6 +239,10 @@ class GraderScore(BaseModel):
     weight: float
     detail: str = ""
     violations: list[str] = Field(default_factory=list)
+    # Set when a grader could not produce a trustworthy number (a judge whose
+    # model was unreachable). An excluded grader is left out of the composite
+    # entirely rather than scored as 1.0, and is reported loudly.
+    excluded: bool = False
 
 
 class TaskResult(BaseModel):
