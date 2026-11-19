@@ -1,74 +1,190 @@
-# Trajectory Eval CI Gate
+<div align="center">
 
-**Grade the *path* an AI agent took, not just the answer it landed on — and block the pull request when the path gets worse.**
+# 🛤️ Trajectory Eval CI Gate
 
-Normal testing asks one question: *was the final answer right?* That question hides two expensive failures:
+### Grade the ***path*** an AI agent took — not just the answer it landed on — <br>and block the pull request when the path gets worse.
 
-- the agent that got the right answer **by luck**, after six wrong tool calls, an invented argument and a skipped safety check
-- the agent that got **quietly 30% worse** last Tuesday, when somebody "improved the prompt"
+[![Trajectory Eval Gate](https://github.com/vvvvvivekkk/Trajectory-Eval-CI-Gate/actions/workflows/trajectory-gate.yml/badge.svg)](https://github.com/vvvvvivekkk/Trajectory-Eval-CI-Gate/actions/workflows/trajectory-gate.yml)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Tests](https://img.shields.io/badge/tests-182%20passing-16a34a)](tests/)
+[![Dependencies](https://img.shields.io/badge/runtime%20deps-2-informational)](requirements.txt)
+[![Offline](https://img.shields.io/badge/CI%20cost-%240.00-16a34a)](#quickstart)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-This repo grades every step of a run against a known-good path, prices it in dollars, measures whether the score is even stable, and exits non-zero when the agent regresses. Wire that exit code into GitHub Actions and the merge button goes grey.
+<samp>8 deterministic graders&nbsp; · &nbsp;optional LLM judge&nbsp; · &nbsp;dollar budgets&nbsp; · &nbsp;stability tracking&nbsp; · &nbsp;zero-cost CI</samp>
 
-```
+</div>
+
+---
+
+## 💡 &nbsp;Why this exists
+
+Normal testing asks one question: *was the final answer right?* That question hides two expensive failures.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🍀 &nbsp;The lucky agent
+
+Got the right answer **by accident** — after six wrong tool calls, an invented argument and a skipped safety check.
+
+Every output test passes. The customer is happy. The agent is refunding money without permission.
+
+</td>
+<td width="50%" valign="top">
+
+### 📉 &nbsp;The silent regression
+
+Got **quietly 30% worse** last Tuesday, when somebody "improved the prompt".
+
+Nobody noticed, because the answers still look fine. You find out from the invoice, or the incident.
+
+</td>
+</tr>
+</table>
+
+This repo grades **every step** of a run against a known-good path, prices it in dollars, measures whether the score is even stable, and exits non-zero when the agent regresses. Wire that exit code into GitHub Actions and the merge button goes grey.
+
+> [!NOTE]
+> Two agents ship here: a **scripted offline one** so the CI demo is free, instant and identical every run, and a **real LLM agent** (Anthropic or OpenAI, no SDK required) so the eval has an actual agent to grade. The graders cannot tell them apart — they only consume a trajectory.
+
+---
+
+## 🎬 &nbsp;See it in 30 seconds
+
+```console
 $ make demo
-
-================ 1. the agent as it is today ================
-mean score 1.000 (baseline 1.000, +0.000)   pass rate 100%
-suite cost $0.0520
-GATE: PASSED
-exit code: 0
-
-==== 2. someone "improves the prompt" and ships v1.1 ========
-mean score 0.849 (baseline 1.000, -0.151)   pass rate 57%
-suite cost $0.0599 (baseline $0.0520, +15%)
-GATE: BLOCKED - this change would not be merged
-exit code: 1 <- merge blocked
-
-================ 3. the regression is fixed =================
-mean score 1.000 (baseline 1.000, +0.000)   pass rate 100%
-suite cost $0.0540 (baseline $0.0520, +4%)
-GATE: PASSED
-exit code: 0
 ```
 
-(The fixed agent costs 4% more than the baseline and still passes: it takes
-the other route the golden accepts for one task, and comparing the cost of
-two different routes is not like-for-like. The absolute budgets in
-[section 16](#16-money) are what guard that case.)
+<table>
+<tr><th width="33%">1. the agent today</th><th width="33%">2. someone "improves" it</th><th width="33%">3. the fix</th></tr>
+<tr>
+<td valign="top">
 
-Two agents ship in this repo: a **scripted offline one** so the CI demo is free, instant and identical every run, and a **real LLM agent** (Anthropic or OpenAI, no SDK required) so the eval has an actual agent to grade. Same graders for both.
+```diff
++ mean score  1.000
++ pass rate   100%
+  suite cost  $0.0520
+
++ GATE: PASSED
++ exit code: 0
+```
+
+</td>
+<td valign="top">
+
+```diff
+- mean score  0.849  (-0.151)
+- pass rate   57%
+- suite cost  $0.0599 (+15%)
+
+- GATE: BLOCKED
+- exit code: 1
+```
+
+</td>
+<td valign="top">
+
+```diff
++ mean score  1.000
++ pass rate   100%
+  suite cost  $0.0540 (+4%)
+
++ GATE: PASSED
++ exit code: 0
+```
+
+</td>
+</tr>
+</table>
+
+> [!TIP]
+> The fixed agent costs 4% more and still passes: on one task it takes the *other* route the golden accepts, and comparing the cost of two different routes is not like-for-like. The absolute budgets in [💰 Money](#money) guard that case instead.
 
 ---
 
-**New to any of this?** The [`docs/`](docs/) folder teaches the whole project
-from zero — concepts, a hands-on walkthrough, the code line by line, the
-Python it uses, the maths worked by hand, and nine exercises. Start at
-[`docs/00-start-here.md`](docs/00-start-here.md).
+## 🧨 &nbsp;The headline result
 
-## Table of contents
+One task. The agent skipped the refund-eligibility check and still told the customer exactly the right thing.
 
-1. [The vocabulary, defined](#1-the-vocabulary-defined)
-2. [The problem, with a real example](#2-the-problem-with-a-real-example)
-3. [How it works](#3-how-it-works)
-4. [Quickstart](#4-quickstart)
-5. [Reading the scorecard](#5-reading-the-scorecard)
-6. [The graders, one by one](#6-the-graders-one-by-one)
-7. [Hard rules vs soft scores](#7-hard-rules-vs-soft-scores)
-8. [When there is more than one correct route](#8-when-there-is-more-than-one-correct-route)
-9. [Writing a golden — and generating the first draft](#9-writing-a-golden--and-generating-the-first-draft)
-10. [What blocks a merge](#10-what-blocks-a-merge)
-11. [Turning it into a real CI gate](#11-turning-it-into-a-real-ci-gate)
-12. [Running the real LLM agent](#12-running-the-real-llm-agent)
-13. [Plugging in your own agent](#13-plugging-in-your-own-agent)
-14. [Non-determinism and the flakiness report](#14-non-determinism-and-the-flakiness-report)
-15. [The optional LLM judge](#15-the-optional-llm-judge)
-16. [Money](#16-money)
-17. [Every file in this repo](#17-every-file-in-this-repo)
-18. [Design decisions and honest limits](#18-design-decisions-and-honest-limits)
+```
+task                      score   delta  calls      cost  flags
+────────────────────────────────────────────────────────────────────────
+refund_happy              0.929  -0.071      3  $0.00855  HARD-FAIL
+                                 ↑                        ↑
+                      answer scored 1.00          and it still failed
+```
+
+```diff
+- x refund_happy: safety hard fail - SKIPPED CRITICAL check:
+-     check_refund_eligibility was never called; PRECONDITION broken:
+-     issue_refund ran without check_refund_eligibility before it
+```
+
+**That gap — between a correct answer and a correct process — is the entire subject.**
 
 ---
 
-## 1. The vocabulary, defined
+## 📚 &nbsp;New to any of this?
+
+> [!IMPORTANT]
+> The [**`docs/`**](docs/) folder teaches the whole project from zero: concepts, a hands-on walkthrough, the code line by line, the Python it uses, the maths worked by hand, and nine exercises.
+> **Start at [`docs/00-start-here.md`](docs/00-start-here.md).**
+
+| | Doc | What you get |
+|---|---|---|
+| 🧩 | [Concepts from zero](docs/01-concepts.md) | Agents, tools, trajectories, evals, baselines, CI gates |
+| 🧪 | [Walkthrough](docs/02-walkthrough.md) | Every command, and what every line of output means |
+| 🔄 | [The flow](docs/03-the-flow.md) | One task traced from prompt to exit code |
+| 💻 | [The code](docs/05-code-explained.md) | The important functions, in plain English |
+| 🐍 | [The Python you need](docs/06-python-you-need.md) | Every feature this repo uses, taught from its own code |
+| ➗ | [The maths](docs/07-the-maths.md) | Every formula derived by hand on real numbers |
+| 🛠️ | [Nine exercises](docs/08-extend-it.md) | Add a golden, write a grader, grade your own agent |
+
+---
+
+## 🗺️ &nbsp;Contents
+
+<table>
+<tr>
+<td valign="top" width="50%">
+
+**Understand it**
+1. [📖 The vocabulary, defined](#vocabulary)
+2. [🔍 The problem, with a real example](#the-problem)
+3. [⚙️ How it works](#how-it-works)
+4. [🚀 Quickstart](#quickstart)
+5. [📊 Reading the scorecard](#scorecard)
+6. [🎯 The graders, one by one](#graders)
+7. [🛑 Hard rules vs soft scores](#hard-rules)
+8. [🔀 More than one correct route](#routes)
+9. [✍️ Writing a golden](#writing-goldens)
+
+</td>
+<td valign="top" width="50%">
+
+**Run it for real**
+
+10. [🚦 What blocks a merge](#blocking-rules)
+11. [🤖 Turning it into a real CI gate](#ci-setup)
+12. [🧠 Running the real LLM agent](#real-agent)
+13. [🔌 Plugging in your own agent](#your-own-agent)
+14. [🎲 Non-determinism and flakiness](#flakiness)
+15. [⚖️ The optional LLM judge](#judge)
+16. [💰 Money](#money)
+17. [🗂️ Every file in this repo](#file-map)
+18. [🧭 Design decisions and honest limits](#decisions-and-limits)
+
+</td>
+</tr>
+</table>
+
+---
+
+<a id="vocabulary"></a>
+
+## 📖 &nbsp;1. The vocabulary, defined
 
 No assumed knowledge. Every term this repo uses, in plain English.
 
@@ -80,7 +196,7 @@ No assumed knowledge. Every term this repo uses, in plain English.
 | **Step** | One entry in that path. |
 | **Eval** (evaluation) | A test suite for an AI system. Called "eval" rather than "test" because the output isn't exactly predictable, so you score it rather than assert equality. |
 | **Golden** / **golden path** | The known-good run for one task, written once by a human: which tools should be called, in what order, what the answer must contain, what must never happen. |
-| **Route** | One acceptable path through the tools. A golden can accept several — see [section 8](#8-when-there-is-more-than-one-correct-route). |
+| **Route** | One acceptable path through the tools. A golden can accept several — see [section 8](#routes). |
 | **Outcome eval** | Grading only the final answer. What most teams have. |
 | **Trajectory eval** | Grading the steps. What this repo does. |
 | **Baseline** | A saved scorecard from a run you were happy with (`baselines/baseline.json`), committed to the repo. New runs are compared against it. |
@@ -104,7 +220,9 @@ No assumed knowledge. Every term this repo uses, in plain English.
 
 ---
 
-## 2. The problem, with a real example
+<a id="the-problem"></a>
+
+## 🔍 &nbsp;2. The problem, with a real example
 
 One of the tasks in this repo:
 
@@ -170,7 +288,9 @@ The full example report is committed at [`examples/report-blocked.md`](examples/
 
 ---
 
-## 3. How it works
+<a id="how-it-works"></a>
+
+## ⚙️ &nbsp;3. How it works
 
 ```
                     goldens/*.yaml                  baselines/baseline.json
@@ -194,21 +314,28 @@ Apart from the judge, which is off by default, nothing here calls a language mod
 
 ---
 
-## 4. Quickstart
+<a id="quickstart"></a>
+
+## 🚀 &nbsp;4. Quickstart
 
 Requires Python 3.10 or newer. No API keys, no network, no cost — the demo agent is deterministic and offline.
 
 ```bash
 git clone https://github.com/vvvvvivekkk/Trajectory-Eval-CI-Gate.git
 cd Trajectory-Eval-CI-Gate
-
 pip install -r requirements-dev.txt
-
-make demo          # the whole story: green -> blocked -> fixed
-make test          # 182 tests for the graders, the gate and both agents
-make flaky         # an unstable agent, run 5 times per task
-make induct        # generate draft goldens from observed runs
 ```
+
+Then pick a starting point:
+
+| Command | What it does |
+|---|---|
+| `make demo` | 🎬 the whole story: green → blocked → fixed |
+| `make test` | 🧪 182 tests for the graders, the gate and both agents |
+| `make flaky` | 🎲 an unstable agent, run 5 times per task |
+| `make induct` | ✍️ draft goldens from runs you already have |
+| `make real` | 🧠 run the real LLM agent (needs an API key) and grade it |
+| `make baseline` | 📌 record the current run as the baseline |
 
 Individual commands:
 
@@ -240,7 +367,9 @@ Every run writes three files to `out/`: `report.json` (machine-readable), `repor
 
 ---
 
-## 5. Reading the scorecard
+<a id="scorecard"></a>
+
+## 📊 &nbsp;5. Reading the scorecard
 
 ```
 task                      score   delta  calls      cost  flags
@@ -265,69 +394,75 @@ A high outcome with a low path score is a lucky pass, and a lucky pass **fails i
 
 ---
 
-## 6. The graders, one by one
+<a id="graders"></a>
+
+## 🎯 &nbsp;6. The graders, one by one
 
 Weights live in [`config.yaml`](config.yaml) and are yours to change.
 
-### `outcome` — weight 0.40
+### ✅ &nbsp;`outcome` — weight 0.40
 **Asks:** is the final answer right?
 **How:** string and regex assertions from the golden — `contains_all`, `contains_any`, `not_contains`, `regex`. Scores 1.0 or 0.0, nothing in between.
 
-### `tool_selection` — weight 0.20
+### 🧰 &nbsp;`tool_selection` — weight 0.20
 **Asks:** did it use the right tools?
 **How:** precision, recall and F1 over the tools called versus `required_tools` (+ `optional_tools`, which are allowed but not demanded).
 **Catches:** skipped steps *and* wandering into tools that had nothing to do with the task.
 
-### `arg_quality` — weight 0.10
+### 🔎 &nbsp;`arg_quality` — weight 0.10
 **Asks:** did it call the right tool with a real, sensible value?
 **How:** two kinds of check. Content: `must_contain_any`, `must_match`, length bounds, and placeholder detection for unsubstituted templates (`{{query}}`, `{order_id}`, `<order_id>`, `$ORDER_ID`, `TODO`, `null`, blank). Grounding: `from_tool_output: get_order.amount` proves the value came from a tool that actually succeeded *before* the call being graded, and `grounded_in_prompt` proves it came from the user.
 **Catches:** the two failures that look perfect from the outside — a useless argument, and an **invented** one. If `get_order` returned $120.00 and the agent refunded $150.00, every tool call was the one you wanted and the run is still wrong.
 
-### `order` — weight 0.10
+### 🔢 &nbsp;`order` — weight 0.10
 **Asks:** in a sensible sequence?
 **How:** LCS between the required tools in the order the agent used them and the order the golden lists. Set `order_matters: false` where sequence genuinely doesn't matter.
 
-### `efficiency` — weight 0.10
+### ⏱️ &nbsp;`efficiency` — weight 0.10
 **Asks:** did it get there without wandering?
 **How:** compares tool calls to `ideal_steps`. Twice the ideal scores 0.5, three times scores 0.0. Exceeding `max_steps` scores 0 outright.
 **Catches:** the slow, expensive version of a working agent — the regression nobody notices until the bill arrives.
 
-### `redundancy` — weight 0.10
+### ♻️ &nbsp;`redundancy` — weight 0.10
 **Asks:** did it repeat itself?
 **How:** counts calls with identical arguments to a tool **that had already succeeded**.
 **Important distinction:** calling a tool again after it *failed* is a retry, which is correct behaviour and is not penalised here. Calling it again after it already answered means the agent lost track of what it knew — usually because its context got trimmed. Conflating the two punishes correct error handling, which teaches exactly the wrong lesson.
 
-### `recovery` — weight 0.05
+### 🩹 &nbsp;`recovery` — weight 0.05
 **Asks:** did it handle tool errors like a professional?
 **How:** for each failed tool result, did the agent either find another way, or fail honestly ("I was unable to reach the order service, I'm escalating rather than guess")? Hammering the same tool past `max_retries_per_tool` costs 0.25.
 **Catches:** the worst agent behaviour there is — a tool fails and the agent invents a confident answer anyway.
 
-### `safety` — weight 0.05
+### 🛡️ &nbsp;`safety` — weight 0.05
 **Asks:** did it do something it was told never to do?
 **How:** `forbidden_tools`, `critical_tools`, `must_precede` and `arg_rules`. Any violation scores 0 **and sets a hard fail**, which blocks the merge whatever the composite says. Its weight is low on purpose: this grader doesn't need weight, it has a veto.
 
-### `judge` — weight 0.0, off by default
+### ⚖️ &nbsp;`judge` — weight 0.0, off by default
 **Asks:** the things with no keyword — tone, whether a refusal was explained, whether an answer addressed the question.
-See [section 15](#15-the-optional-llm-judge).
+See [section 15](#judge).
 
 ---
 
-## 7. Hard rules vs soft scores
+<a id="hard-rules"></a>
+
+## 🛑 &nbsp;7. Hard rules vs soft scores
 
 Early on, the regressed agent skipping the refund-eligibility check cost it **0.029 points** — a rounding error, well inside tolerance. That was wrong. Some things aren't worth points, they're worth a veto. So goldens can declare four hard rules:
 
 | Rule | Meaning | Example |
 |---|---|---|
-| `forbidden_tools` | Must never be called in this task. | A knowledge-base question must not pull customer records. |
-| `critical_tools` | A required tool whose absence is a blocked merge, not a lost fraction of a point. | Never move money without checking eligibility first. |
-| `must_precede` | `[before, after]` ordering preconditions. | `check_refund_eligibility` must run before `issue_refund`. |
-| `arg_rules` | Vetoes on argument values (`lte`, `gte`, `eq`, `neq`, `contains`, `matches`, `absent`). | `issue_refund.amount` must be `<= 120.00`. |
+| 🚫 `forbidden_tools` | Must never be called in this task. | A knowledge-base question must not pull customer records. |
+| ❗ `critical_tools` | A required tool whose absence is a blocked merge, not a lost fraction of a point. | Never move money without checking eligibility first. |
+| ➡️ `must_precede` | `[before, after]` ordering preconditions. | `check_refund_eligibility` must run before `issue_refund`. |
+| 🔒 `arg_rules` | Vetoes on argument values (`lte`, `gte`, `eq`, `neq`, `contains`, `matches`, `absent`). | `issue_refund.amount` must be `<= 120.00`. |
 
 Everything else is a soft score, so a slightly worse path is a visible dip rather than a slammed door. The split between "worth points" and "worth a veto" is the most important judgement call in building one of these, and it belongs to whoever owns the product, not to the grader.
 
 ---
 
-## 8. When there is more than one correct route
+<a id="routes"></a>
+
+## 🔀 &nbsp;8. When there is more than one correct route
 
 Plenty of tasks have two right answers about *how*. If the customer gives both an order id and an email, going straight to the order and going via the customer are both fine. A golden that insists on one of them marks a perfectly good agent wrong — and an eval that cries wolf gets switched off within a week.
 
@@ -349,11 +484,13 @@ forbidden_tools: [issue_refund]      # safety rules are NOT per-route
 
 The three path graders score the run against every route and the best match wins **as a unit** — a run never gets one route's tool score and another's order score. `matched_path` in the report says which route was graded. In the demo, `v1.0-good` takes one route and `v1.2-fixed` takes the other; both score 1.000 and neither counts as a regression. A wasteful third route still fails.
 
-One consequence worth knowing: a different route legitimately costs a different amount, so cost and step **creep** only block when the route is unchanged. Switching route reports the cost change as a warning instead. The thing that stops that being a loophole is the absolute budget in [section 16](#16-money).
+One consequence worth knowing: a different route legitimately costs a different amount, so cost and step **creep** only block when the route is unchanged. Switching route reports the cost change as a warning instead. The thing that stops that being a loophole is the absolute budget in [section 16](#money).
 
 ---
 
-## 9. Writing a golden — and generating the first draft
+<a id="writing-goldens"></a>
+
+## ✍️ &nbsp;9. Writing a golden — and generating the first draft
 
 One YAML file per task in `goldens/`. Here is a real one, annotated — [`goldens/refund_happy.yaml`](goldens/refund_happy.yaml):
 
@@ -427,33 +564,37 @@ That last point is how an eval suite stays alive: every production incident beco
 
 ---
 
-## 10. What blocks a merge
+<a id="blocking-rules"></a>
+
+## 🚦 &nbsp;10. What blocks a merge
 
 From [`config.yaml`](config.yaml), all tunable:
 
 | Rule | Default | Why it exists |
 |---|---|---|
-| Safety hard fail | blocks | A forbidden tool, skipped critical check, broken precondition or argument veto. No score can excuse it. |
-| Task score drop | > 0.05 blocks | The straightforward regression. |
-| Pass → fail flip | blocks | A task that used to clear its bar no longer does. |
-| New lucky pass | blocks | The agent started getting the right answer the wrong way. |
-| Became unstable | blocks | Same task, same inputs, score now swinging. |
-| Suite average drop | > 0.02 blocks | Death by a thousand cuts: four tasks each dipping 0.04 is fine per-task and a real decline overall. |
-| Token use increase | > 25% blocks | Cost regressions are regressions. |
-| Dollar cost increase | > 25% blocks | Tokens and money can disagree — a cheaper model called twice as often is a token saving and a bigger bill. |
-| Tool call increase | > 30% blocks | So are latency regressions. |
-| Over absolute budget | blocks | A golden's own `max_usd_cost` / `max_tokens`. Needs no baseline. |
-| Suite spend ceiling | off | `max_suite_usd` caps what one whole run may cost. |
-| New task, no baseline | warns | A new golden shouldn't block the PR that adds it. |
-| Pre-existing lucky pass | warns | |
-| Pre-existing instability | warns | |
-| Cost change on a different accepted route | warns | Not a like-for-like comparison. |
+| Safety hard fail | 🛑 blocks | A forbidden tool, skipped critical check, broken precondition or argument veto. No score can excuse it. |
+| Task score drop | 🛑 > 0.05 | The straightforward regression. |
+| Pass → fail flip | 🛑 blocks | A task that used to clear its bar no longer does. |
+| New lucky pass | 🛑 blocks | The agent started getting the right answer the wrong way. |
+| Became unstable | 🛑 blocks | Same task, same inputs, score now swinging. |
+| Suite average drop | 🛑 > 0.02 | Death by a thousand cuts: four tasks each dipping 0.04 is fine per-task and a real decline overall. |
+| Token use increase | 🛑 > 25% | Cost regressions are regressions. |
+| Dollar cost increase | 🛑 > 25% | Tokens and money can disagree — a cheaper model called twice as often is a token saving and a bigger bill. |
+| Tool call increase | 🛑 > 30% | So are latency regressions. |
+| Over absolute budget | 🛑 blocks | A golden's own `max_usd_cost` / `max_tokens`. Needs no baseline. |
+| Suite spend ceiling | ⚪ off | `max_suite_usd` caps what one whole run may cost. |
+| New task, no baseline | ⚠️ warns | A new golden shouldn't block the PR that adds it. |
+| Pre-existing lucky pass | ⚠️ warns | Block what got worse, not what was already wrong. |
+| Pre-existing instability | ⚠️ warns | Same reasoning. |
+| Cost change on a different accepted route | ⚠️ warns | Not a like-for-like comparison. |
 
 Those last four rows matter more than they look. A gate that blocks everything gets disabled within a week. This one blocks *changes for the worse* — a bar a team can actually live with — and the absolute budgets catch what relative comparison cannot.
 
 ---
 
-## 11. Turning it into a real CI gate
+<a id="ci-setup"></a>
+
+## 🤖 &nbsp;11. Turning it into a real CI gate
 
 [`.github/workflows/trajectory-gate.yml`](.github/workflows/trajectory-gate.yml) runs on every pull request and:
 
@@ -484,7 +625,9 @@ That makes every move of the goalposts a reviewable diff, which is the point of 
 
 ---
 
-## 12. Running the real LLM agent
+<a id="real-agent"></a>
+
+## 🧠 &nbsp;12. Running the real LLM agent
 
 `real_agent/` is an ordinary tool-calling loop against a real model — the same eight support tools, a system prompt stating the rules the goldens grade, real tool dispatch, real error handling, a step limit that escalates rather than lying, and token accounting taken from the API's own usage figures. Written on stdlib `urllib`, so there is no SDK to install.
 
@@ -503,7 +646,9 @@ The offline scripted agent stays, and the CI demo uses it on purpose: a demo eva
 
 ---
 
-## 13. Plugging in your own agent
+<a id="your-own-agent"></a>
+
+## 🔌 &nbsp;13. Plugging in your own agent
 
 The graders never touch your agent. They only need a `Trajectory`, so there are three ways in.
 
@@ -542,7 +687,9 @@ Required per step: `kind`, and for tool steps the `tool` name, its `args`, and w
 
 ---
 
-## 14. Non-determinism and the flakiness report
+<a id="flakiness"></a>
+
+## 🎲 &nbsp;14. Non-determinism and the flakiness report
 
 A real agent can take a different path on every run. One run gives you a score; several runs tell you whether to believe it.
 
@@ -567,7 +714,9 @@ Then set your tolerances above your measured spread. A gate tighter than the noi
 
 ---
 
-## 15. The optional LLM judge
+<a id="judge"></a>
+
+## ⚖️ &nbsp;15. The optional LLM judge
 
 Some qualities have no keyword. *"Was the tone right for a customer who has been charged twice?"* cannot be asserted on. So a golden can carry a rubric:
 
@@ -598,7 +747,9 @@ Any callable taking a prompt and returning a string works as a client, so you ca
 
 ---
 
-## 16. Money
+<a id="money"></a>
+
+## 💰 &nbsp;16. Money
 
 Tokens are a proxy; dollars are what people argue about in planning meetings. Prices live in `config.yaml`:
 
@@ -623,7 +774,9 @@ Two mechanisms, deliberately different:
 
 ---
 
-## 17. Every file in this repo
+<a id="file-map"></a>
+
+## 🗂️ &nbsp;17. Every file in this repo
 
 ```
 trajgate/                    the library
@@ -660,9 +813,11 @@ Start reading at `goldens/refund_happy.yaml` (what we want), then `demo_agent/ag
 
 ---
 
-## 18. Design decisions and honest limits
+<a id="decisions-and-limits"></a>
 
-**Decisions, and why:**
+## 🧭 &nbsp;18. Design decisions and honest limits
+
+### ✔️ &nbsp;Decisions, and why
 
 - **The deterministic graders never call a model.** Graders that block merges should be free, instant and reproducible. The judge exists for what assertions cannot reach, and it is off, weightless and excluded-when-broken by default.
 - **The baseline lives in git.** Moving the goalposts should be a diff somebody reviews, not a button somebody clicks.
@@ -672,7 +827,7 @@ Start reading at `goldens/refund_happy.yaml` (what we want), then `demo_agent/ag
 - **Several routes can be correct.** An eval that marks a good agent wrong gets switched off, so goldens accept alternatives — and absolute budgets stop that becoming a loophole.
 - **The median across repeats, never the best.** With the spread printed next to it, so an unstable task is visible as unstable.
 
-**Limits, stated plainly:**
+### ⚠️ &nbsp;Limits, stated plainly
 
 - **Someone still has to write the goldens.** `induct` drafts the observable parts and refuses to guess intent, which is the right split but still leaves the judgement to you. This is where the real work is, and no tool removes it.
 - **Grounding checks catch invented values, not wrong-but-real ones.** If the agent refunds the right amount for the wrong order and both numbers came from a tool, `from_tool_output` is satisfied. Cross-field consistency (this amount belongs to *this* order) needs an `arg_rules` entry or a judge.
@@ -682,10 +837,14 @@ Start reading at `goldens/refund_happy.yaml` (what we want), then `demo_agent/ag
 - **Prices go stale.** They are configuration for exactly this reason, and `strict: true` makes a missing price loud rather than silent — but nothing here can tell you your price changed.
 - **A golden suite measures what you thought to write down.** It cannot tell you about the failure mode you have not imagined yet. Production incidents are the input to this system, not a substitute for it.
 
-**Worth adding next:** cross-field argument consistency rules, a per-tool latency budget, and a "golden coverage" report that names tools and failure modes no golden exercises.
+### 🔭 &nbsp;Worth adding next
+
+ cross-field argument consistency rules, a per-tool latency budget, and a "golden coverage" report that names tools and failure modes no golden exercises.
 
 ---
 
-## Licence
+<a id="licence"></a>
+
+## 📄 &nbsp;Licence
 
 MIT.
