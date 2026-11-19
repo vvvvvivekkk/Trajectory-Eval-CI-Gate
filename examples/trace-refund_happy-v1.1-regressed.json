@@ -1,0 +1,123 @@
+{
+  "task_id": "refund_happy",
+  "agent_version": "v1.1-regressed",
+  "run_id": "run-1",
+  "steps": [
+    {
+      "index": 0,
+      "kind": "tool_call",
+      "tool": "get_order",
+      "args": {
+        "order_id": "A1001"
+      },
+      "ok": null,
+      "error": null,
+      "output": null,
+      "text": null,
+      "latency_ms": 0,
+      "tokens_in": 350,
+      "tokens_out": 60
+    },
+    {
+      "index": 1,
+      "kind": "tool_result",
+      "tool": "get_order",
+      "args": {},
+      "ok": true,
+      "error": null,
+      "output": {
+        "order_id": "A1001",
+        "email": "priya@example.com",
+        "amount": 120.0,
+        "days_since_delivery": 5,
+        "status": "delivered",
+        "charges": 1
+      },
+      "text": null,
+      "latency_ms": 180,
+      "tokens_in": 0,
+      "tokens_out": 0
+    },
+    {
+      "index": 2,
+      "kind": "tool_call",
+      "tool": "issue_refund",
+      "args": {
+        "order_id": "A1001",
+        "amount": 120.0
+      },
+      "ok": null,
+      "error": null,
+      "output": null,
+      "text": null,
+      "latency_ms": 0,
+      "tokens_in": 350,
+      "tokens_out": 60
+    },
+    {
+      "index": 3,
+      "kind": "tool_result",
+      "tool": "issue_refund",
+      "args": {},
+      "ok": true,
+      "error": null,
+      "output": {
+        "order_id": "A1001",
+        "refunded": 120.0,
+        "ref": "RF-A1001"
+      },
+      "text": null,
+      "latency_ms": 320,
+      "tokens_in": 0,
+      "tokens_out": 0
+    },
+    {
+      "index": 4,
+      "kind": "tool_call",
+      "tool": "send_email",
+      "args": {
+        "to": "priya@example.com",
+        "body": "Your refund is on its way."
+      },
+      "ok": null,
+      "error": null,
+      "output": null,
+      "text": null,
+      "latency_ms": 0,
+      "tokens_in": 350,
+      "tokens_out": 60
+    },
+    {
+      "index": 5,
+      "kind": "tool_result",
+      "tool": "send_email",
+      "args": {},
+      "ok": true,
+      "error": null,
+      "output": {
+        "to": "priya@example.com",
+        "queued": true
+      },
+      "text": null,
+      "latency_ms": 140,
+      "tokens_in": 0,
+      "tokens_out": 0
+    },
+    {
+      "index": 6,
+      "kind": "final",
+      "tool": null,
+      "args": {},
+      "ok": null,
+      "error": null,
+      "output": null,
+      "text": "I've approved a refund of $120.00 for order A1001. It should appear on your card in 3-5 business days, reference RF-A1001.",
+      "latency_ms": 0,
+      "tokens_in": 300,
+      "tokens_out": 120
+    }
+  ],
+  "final_answer": "I've approved a refund of $120.00 for order A1001. It should appear on your card in 3-5 business days, reference RF-A1001.",
+  "total_latency_ms": 640,
+  "usd_cost": 0.00855
+}
