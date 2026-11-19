@@ -1,0 +1,22 @@
+task_id: order_lookup_recovery
+description: >
+  The customer gives an email, not an order number, so the agent has to look
+  the customer up first and then the order.
+prompt: "Where is my order? My email is priya@example.com"
+
+required_tools:
+  - get_customer
+  - get_order
+optional_tools: []
+forbidden_tools:
+  - issue_refund
+order_matters: true
+ideal_steps: 2
+max_steps: 4
+
+expect:
+  contains_all: ["A1001"]
+  contains_any: ["delivered"]
+
+pass_threshold: 0.80
+weight: 1.0

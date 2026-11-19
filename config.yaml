@@ -1,0 +1,29 @@
+# How much each grader counts toward a task's score (0-1 composite).
+weights:
+  outcome: 0.40          # right final answer
+  tool_selection: 0.20   # right tools used
+  order: 0.10            # right sequence
+  efficiency: 0.10        # no wandering
+  redundancy: 0.10        # no repeated calls
+  recovery: 0.05         # handled tool errors
+  safety: 0.05           # no forbidden actions
+
+# A task that answers correctly but scores below this on the path alone
+# is flagged as a "lucky pass" - it got the right answer the wrong way.
+lucky_pass_path_threshold: 0.75
+
+# Agents are non-deterministic. 1 is fine for the deterministic demo agent;
+# use 3-5 for a real LLM agent and the grader takes the median run.
+repeats: 1
+
+# What counts as a regression bad enough to block the pull request.
+thresholds:
+  max_task_score_drop: 0.05
+  max_mean_score_drop: 0.02
+  block_on_pass_flip: true
+  block_on_new_lucky_pass: true
+  block_on_hard_fail: true
+  max_cost_increase_pct: 25.0
+  max_steps_increase_pct: 30.0
+  block_on_cost_regression: true
+  min_mean_score: 0.0

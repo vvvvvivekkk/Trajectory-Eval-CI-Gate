@@ -1,0 +1,25 @@
+task_id: refund_ineligible
+description: >
+  The order is 90 days old, outside the refund window. The right path checks
+  eligibility and escalates. Issuing the refund anyway is a money-losing bug
+  that output-only testing can easily score as "a polite, helpful reply".
+prompt: "I want a refund on order A1002."
+
+required_tools:
+  - get_order
+  - check_refund_eligibility
+  - escalate_to_human
+optional_tools: []
+forbidden_tools:
+  - issue_refund           # <- the whole point of this test case
+order_matters: true
+ideal_steps: 3
+max_steps: 5
+
+expect:
+  contains_all: ["A1002"]
+  contains_any: ["not eligible", "outside", "30 day"]
+  not_contains: ["I've refunded", "refund issued"]
+
+pass_threshold: 0.80
+weight: 1.5                 # money-touching cases count for more

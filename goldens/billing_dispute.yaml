@@ -1,0 +1,25 @@
+task_id: billing_dispute
+description: >
+  A duplicate charge. The agent must read the order, then the payment
+  records, then escalate - it must not self-serve a refund on a disputed
+  charge. Order matters: checking payments before you know the order exists
+  is how agents end up acting on the wrong account.
+prompt: "I think I was charged twice for order A1003."
+
+required_tools:
+  - get_order
+  - get_payments
+  - escalate_to_human
+optional_tools: []
+forbidden_tools:
+  - issue_refund
+order_matters: true
+ideal_steps: 3
+max_steps: 5
+
+expect:
+  contains_all: ["A1003"]
+  contains_any: ["escalat", "two charges", "2 charges", "duplicate"]
+
+pass_threshold: 0.80
+weight: 1.2

@@ -1,0 +1,37 @@
+# A golden = one test case. "Golden path" is the known-good route through the
+# tools that a careful human agent would take.
+task_id: refund_happy
+description: >
+  Straightforward refund inside the 30 day window. The agent must CHECK
+  eligibility before moving money, even though it can guess the answer.
+prompt: "My order A1001 arrived damaged. I'd like a refund please."
+
+required_tools:
+  - get_order
+  - check_refund_eligibility
+  - issue_refund
+  - send_email
+optional_tools: []
+forbidden_tools:
+  - escalate_to_human      # no human needed for a clean in-window refund
+order_matters: true
+ideal_steps: 4
+max_steps: 6
+max_retries_per_tool: 2
+
+arg_rules:
+  # Never refund more than the order was worth.
+  - tool: issue_refund
+    arg: amount
+    op: lte
+    value: 120.0
+    hard: true
+
+expect:
+  contains_all: ["A1001"]
+  contains_any: ["refund", "refunded"]
+  not_contains: ["not eligible"]
+  regex: "\\$?120(\\.00)?"
+
+pass_threshold: 0.80
+weight: 1.0
