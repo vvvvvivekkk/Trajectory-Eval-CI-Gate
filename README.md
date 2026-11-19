@@ -40,6 +40,11 @@ Two agents ship in this repo: a **scripted offline one** so the CI demo is free,
 
 ---
 
+**New to any of this?** The [`docs/`](docs/) folder teaches the whole project
+from zero — concepts, a hands-on walkthrough, the code line by line, the
+Python it uses, the maths worked by hand, and nine exercises. Start at
+[`docs/00-start-here.md`](docs/00-start-here.md).
+
 ## Table of contents
 
 1. [The vocabulary, defined](#1-the-vocabulary-defined)
@@ -645,6 +650,7 @@ real_agent/                  the real LLM agent
   loop.py                    the tool-calling loop; emits a Trajectory
   run.py                     run the suite against a real model -> .jsonl
 tests/                       182 tests: graders, gate, both agents, end to end
+docs/                        learn the whole project from zero (start at 00)
 examples/                    a committed blocked report and a raw trace to read
 .github/workflows/           the CI gate itself
 Makefile                     demo / test / flaky / induct / real / baseline
