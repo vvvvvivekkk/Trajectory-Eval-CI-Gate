@@ -23,6 +23,7 @@ class TaskDelta(BaseModel):
     was_passing: bool | None
     now_passing: bool
     new_lucky_pass: bool = False
+    new_flaky: bool = False
     hard_fail: bool = False
     steps_delta_pct: float | None = None
     cost_delta_pct: float | None = None
@@ -78,6 +79,7 @@ def evaluate(current: SuiteResult, baseline: SuiteResult | None,
             was_passing=b.passed if b else None,
             now_passing=cur.passed,
             new_lucky_pass=cur.lucky_pass and not (b.lucky_pass if b else False),
+            new_flaky=cur.flaky and not (b.flaky if b else False),
             hard_fail=cur.hard_fail,
         )
         d.usd_cost = cur.usd_cost
@@ -104,6 +106,11 @@ def evaluate(current: SuiteResult, baseline: SuiteResult | None,
                 f"score dropped {abs(d.delta):.3f}, more than the allowed "
                 f"{th.max_task_score_drop}"
             )
+        if th.block_on_new_flaky and d.new_flaky:
+            d.blocking_reasons.append(
+                f"became UNSTABLE: score spread {cur.spread:.2f} across "
+                f"{cur.runs} runs (limit {th.max_run_spread}), "
+                f"{cur.run_pass_rate*100:.0f}% of runs passed")
         if th.block_on_new_lucky_pass and d.new_lucky_pass:
             d.blocking_reasons.append(
                 "new LUCKY PASS: right answer reached by a bad path "
@@ -170,6 +177,10 @@ def evaluate(current: SuiteResult, baseline: SuiteResult | None,
             d.warnings.append(f"small dip of {abs(d.delta):.3f}, within tolerance")
         if cur.lucky_pass and not d.new_lucky_pass:
             d.warnings.append("still a lucky pass (was already in the baseline)")
+        if cur.flaky and not d.new_flaky:
+            d.warnings.append(
+                f"still unstable (spread {cur.spread:.2f}) - was already "
+                f"unstable in the baseline, so not blocking this change")
 
         decision.deltas.append(d)
         decision.reasons += [f"{d.task_id}: {r}" for r in d.blocking_reasons]

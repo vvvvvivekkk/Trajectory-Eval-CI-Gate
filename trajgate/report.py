@@ -33,6 +33,8 @@ def _flags(t) -> str:
         f.append("HARD-FAIL")
     if getattr(t, "budget_exceeded", False):
         f.append("OVER-BUDGET")
+    if getattr(t, "flaky", False):
+        f.append("FLAKY")
     if t.lucky_pass:
         f.append("LUCKY-PASS")
     if not t.passed and not t.hard_fail:
@@ -68,6 +70,24 @@ def terminal(suite: SuiteResult, decision: GateDecision) -> str:
         cost_line += (f" (baseline {fmt_usd(decision.baseline_usd)}, "
                       f"{pct:+.0f}%)")
     lines.append(cost_line)
+    if suite.repeats > 1:
+        lines.append("")
+        lines.append(f"stability across {suite.repeats} runs per task")
+        lines.append(f"{'task':<24}{'spread':>8}{'worst':>8}{'best':>8}"
+                     f"{'passed':>9}  runs")
+        for t in suite.tasks:
+            if not t.run_scores:
+                continue
+            marker = "  <- unstable" if t.flaky else ""
+            lines.append(
+                f"{t.task_id:<24}{t.spread:>8.3f}{min(t.run_scores):>8.3f}"
+                f"{max(t.run_scores):>8.3f}{t.run_pass_rate*100:>8.0f}%  "
+                + ", ".join(f"{x:.2f}" for x in t.run_scores) + marker)
+        unstable = suite.flaky_tasks
+        lines.append(f"{len(unstable)} unstable task(s)"
+                     + (": " + ", ".join(t.task_id for t in unstable)
+                        if unstable else ""))
+
     lines.append("")
     if decision.blocked:
         lines.append("GATE: BLOCKED - this change would not be merged")
@@ -133,6 +153,31 @@ def markdown(suite: SuiteResult, decision: GateDecision) -> str:
                 if s.score < 1.0:
                     out.append(f"  - `{s.name}` {s.score:.2f} - {s.detail}")
             out.append("")
+        out.append("</details>")
+        out.append("")
+
+    if suite.repeats > 1:
+        out.append(f"<details><summary>Stability across {suite.repeats} "
+                   f"runs per task ({len(suite.flaky_tasks)} unstable)"
+                   f"</summary>")
+        out.append("")
+        out.append("| task | spread | worst | best | runs passed | scores |")
+        out.append("|---|---|---|---|---|---|")
+        for t in suite.tasks:
+            if not t.run_scores:
+                continue
+            flag = " :warning:" if t.flaky else ""
+            out.append(
+                f"| `{t.task_id}`{flag} | {t.spread:.3f} | "
+                f"{min(t.run_scores):.3f} | {max(t.run_scores):.3f} | "
+                f"{t.run_pass_rate*100:.0f}% | "
+                + ", ".join(f"{x:.2f}" for x in t.run_scores) + " |")
+        out.append("")
+        out.append("A task whose score moves across identical runs is not a "
+                   "task with that score - it is an unstable task. Set the "
+                   "gate's tolerances above your measured spread, or the gate "
+                   "becomes a coin flip.")
+        out.append("")
         out.append("</details>")
         out.append("")
 

@@ -56,3 +56,5 @@ thresholds:
   max_steps_increase_pct: 30.0
   block_on_cost_regression: true
   min_mean_score: 0.0
+  max_run_spread: 0.15             # best-minus-worst across repeats
+  block_on_new_flaky: true         # a task that became unstable blocks

@@ -16,6 +16,8 @@ produce a Trajectory object; nothing in the grader cares where it came from.
 
 from __future__ import annotations
 
+import random
+
 from trajgate.schema import Step, StepKind, Trajectory
 
 from .tools import Backend, ToolError
@@ -73,7 +75,28 @@ POLICIES: dict[str, dict] = {
         "prefer_customer_route": True,
         "duplicate_customer_lookup": False,
     },
+    # Decided per run, not fixed - see _flaky_policy below.
+    "v1.3-flaky": {},
 }
+
+
+def _flaky_policy(task_id: str, run_id: str) -> dict:
+    """A deliberately unstable agent, for demonstrating the flakiness report.
+
+    The variance is seeded from (task, run index), so run 1 always behaves
+    like run 1. That is a compromise on purpose: a real agent's variance is
+    not reproducible, but a CI demo that gives different numbers on every
+    invocation is impossible to write tests against. What it demonstrates is
+    real - the same task scoring differently across repeats.
+    """
+    rng = random.Random(f"{task_id}:{run_id}")
+    p = dict(POLICIES["v1.0-good"])
+    p["skip_eligibility"] = rng.random() < 0.5
+    p["redundant_search"] = rng.random() < 0.5
+    p["broken_query_template"] = rng.random() < 0.4
+    p["recall_after_success"] = rng.random() < 0.5
+    p["prefer_customer_route"] = rng.random() < 0.5
+    return p
 
 Action = tuple[str, dict]
 
@@ -209,7 +232,8 @@ def compose_answer(task_id: str, obs: dict, failed: list[str], p: dict) -> str:
 
 def run_task(task_id: str, version: str = "v1.0-good", run_id: str = "run-1") -> Trajectory:
     """Execute one task and return the trajectory (the path it took)."""
-    p = POLICIES[version]
+    p = (_flaky_policy(task_id, run_id) if version == "v1.3-flaky"
+         else POLICIES[version])
     flaky_tool, flaky_times = FLAKY.get(task_id, (None, 0))
     backend = Backend(flaky_tool=flaky_tool, flaky_times=flaky_times)
 

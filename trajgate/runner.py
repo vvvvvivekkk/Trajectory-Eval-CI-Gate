@@ -64,6 +64,45 @@ def build_judge(cfg: Config):
                         cfg.judge.cache_path)
 
 
+def _attach_stability(res: TaskResult, runs: list[TaskResult],
+                      cfg: Config) -> None:
+    """Record how much the score moved across repeats of the same task.
+
+    A task whose score swings 0.4 between identical runs is not a 0.8 task;
+    it is an unstable task, and that is a finding about the agent rather than
+    a problem with the eval. Flagging it stops the gate becoming a coin flip.
+    """
+    res.runs = len(runs)
+    res.run_scores = [round(r.composite, 4) for r in runs]
+    res.routes_seen = sorted({r.matched_path for r in runs})
+    if len(runs) < 2:
+        return
+
+    res.spread = round(max(res.run_scores) - min(res.run_scores), 4)
+    res.stability = round(max(0.0, 1.0 - res.spread), 4)
+    passes = sum(1 for r in runs if r.passed)
+    res.run_pass_rate = round(passes / len(runs), 4)
+
+    disagreed = 0 < passes < len(runs)
+    res.flaky = res.spread > cfg.thresholds.max_run_spread or disagreed
+
+    res.notes.append(
+        f"{len(runs)} runs: median reported, spread {res.spread:.2f}, "
+        f"{passes}/{len(runs)} passed")
+    if disagreed:
+        res.notes.append(
+            f"UNSTABLE: the same task passed {passes} of {len(runs)} runs - "
+            f"the single-run verdict here is luck, not a measurement")
+    elif res.flaky:
+        res.notes.append(
+            f"UNSTABLE: score moved {res.spread:.2f} across identical runs "
+            f"(limit {cfg.thresholds.max_run_spread})")
+    if len(res.routes_seen) > 1:
+        res.notes.append(
+            f"took different accepted routes across runs: "
+            f"{', '.join(res.routes_seen)}")
+
+
 def run_suite(
     goldens: list[Golden],
     cfg: Config,
@@ -92,11 +131,7 @@ def run_suite(
                 traj = run_task(g.task_id, agent_version, run_id=f"run-{i+1}")
                 runs.append(grade(traj, g, cfg, judge_client))
         res = _median_result(runs)
-        if len(runs) > 1:
-            spread = max(r.composite for r in runs) - min(r.composite for r in runs)
-            res.notes.append(
-                f"{len(runs)} runs, median reported, spread {spread:.2f}"
-            )
+        _attach_stability(res, runs, cfg)
         tasks.append(res)
 
     version = agent_version

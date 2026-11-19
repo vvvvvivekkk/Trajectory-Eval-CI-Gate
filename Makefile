@@ -18,6 +18,9 @@ green:          ## the good agent: gate passes, exit 0
 red:            ## the regressed agent: gate blocks, exit 1
 	-$(PY) -m trajgate run --agent v1.1-regressed
 
+flaky:          ## a deliberately unstable agent, run 5 times per task
+	-$(PY) -m trajgate run --agent v1.3-flaky --repeats 5 --no-gate
+
 baseline:       ## record the good agent as the baseline to be judged against
 	$(PY) -m trajgate run --agent v1.0-good --no-gate
 	$(PY) -m trajgate baseline --report out/report.json --out baselines/baseline.json

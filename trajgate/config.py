@@ -43,6 +43,10 @@ class GateThresholds(BaseModel):
     max_steps_increase_pct: float = 30.0  # step count creeping up this much = block
     block_on_cost_regression: bool = True
     min_mean_score: float = 0.0          # absolute floor, 0 = disabled
+    # Stability. Only applies when repeats > 1, since a single run has no
+    # spread to measure.
+    max_run_spread: float = 0.15         # best-minus-worst above this = flaky
+    block_on_new_flaky: bool = True      # a task that became unstable = block
 
 
 class JudgeConfig(BaseModel):

@@ -283,6 +283,17 @@ class TaskResult(BaseModel):
     # Which of the golden's acceptable routes this run was graded against.
     matched_path: str = "primary"
 
+    # --- stability across repeats (only meaningful when runs > 1) ---
+    # A real agent can take a different path on every run. One run therefore
+    # tells you a score; several runs tell you whether to believe it.
+    runs: int = 1
+    run_scores: list[float] = Field(default_factory=list)
+    spread: float = 0.0            # best run minus worst run
+    stability: float = 1.0         # 1.0 = identical every time
+    run_pass_rate: float = 1.0     # fraction of runs that passed
+    routes_seen: list[str] = Field(default_factory=list)
+    flaky: bool = False
+
     def score_map(self) -> dict[str, float]:
         return {s.name: s.score for s in self.scores}
 
@@ -306,3 +317,11 @@ class SuiteResult(BaseModel):
 
     def by_id(self) -> dict[str, TaskResult]:
         return {t.task_id: t for t in self.tasks}
+
+    @property
+    def flaky_tasks(self) -> list[TaskResult]:
+        return [t for t in self.tasks if t.flaky]
+
+    @property
+    def repeats(self) -> int:
+        return max((t.runs for t in self.tasks), default=1)
