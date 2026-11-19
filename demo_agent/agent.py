@@ -40,6 +40,7 @@ POLICIES: dict[str, dict] = {
         "skip_eligibility": False,
         "refund_when_ineligible": False,
         "redundant_search": False,
+        "broken_query_template": False,
         "extra_customer_lookup": False,
         "recall_after_success": False,
         "payments_before_order": False,
@@ -51,6 +52,7 @@ POLICIES: dict[str, dict] = {
         "skip_eligibility": True,          # dropped a check, answer still right
         "refund_when_ineligible": True,    # refunds an out-of-window order
         "redundant_search": True,          # searches the same thing twice
+        "broken_query_template": True,     # ships "{{query}}" to the search tool
         "extra_customer_lookup": True,     # pulls customer data it doesn't need
         "recall_after_success": True,      # forgot it already had the order
         "payments_before_order": True,     # does the steps back to front
@@ -62,6 +64,7 @@ POLICIES: dict[str, dict] = {
         "skip_eligibility": False,
         "refund_when_ineligible": False,
         "redundant_search": False,
+        "broken_query_template": False,
         "extra_customer_lookup": False,
         "recall_after_success": False,
         "payments_before_order": False,
@@ -102,9 +105,14 @@ def plan(task_id: str, p: dict) -> list[Action]:
         return steps
 
     if task_id == "kb_password_reset":
-        steps = [("search_kb", {"query": "password reset"})]
+        # A template variable that never got substituted. The tool name is
+        # right, the call is useless, and the final answer is still correct
+        # because the model already knew it - so only argument grading and
+        # the lucky-pass check can see this.
+        query = "{{query}}" if p["broken_query_template"] else "password reset"
+        steps = [("search_kb", {"query": query})]
         if p["redundant_search"]:
-            steps.append(("search_kb", {"query": "password reset"}))
+            steps.append(("search_kb", {"query": query}))
         if p["extra_customer_lookup"]:
             steps.append(("get_customer", {"email": "priya@example.com"}))
         return steps

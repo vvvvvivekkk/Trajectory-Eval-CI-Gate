@@ -31,6 +31,19 @@ arg_rules:
     value: 120.0
     hard: true
 
+arg_quality:
+  # The refunded amount must be the amount the order lookup actually
+  # returned - not a number the model produced from the conversation.
+  - tool: issue_refund
+    arg: amount
+    from_tool_output: get_order.amount
+    tolerance: 0.01
+  # And the order id must come from the customer, not from the model.
+  - tool: get_order
+    arg: order_id
+    grounded_in_prompt: true
+    must_match: "^A[0-9]{4}$"
+
 expect:
   contains_all: ["A1001"]
   contains_any: ["refund", "refunded"]

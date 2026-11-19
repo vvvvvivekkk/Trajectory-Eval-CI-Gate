@@ -24,6 +24,7 @@ import re
 
 from .config import Config
 from .schema import (
+    ArgQuality,
     ArgRule,
     Expect,
     Golden,
@@ -388,6 +389,184 @@ def grade_safety(traj: Trajectory, golden: Golden) -> tuple[GraderScore, bool]:
 
 
 # ---------------------------------------------------------------------------
+# 8. arg_quality - did it call the right tool with a sensible, REAL argument?
+# ---------------------------------------------------------------------------
+
+PLACEHOLDER_WORDS = {"todo", "placeholder", "none", "null", "undefined",
+                     "n/a", "na", "string", "value", "unknown", "tbd"}
+PLACEHOLDER_PATTERNS = (
+    r"\{\{.*?\}\}",           # {{query}}   - an unsubstituted template
+    r"^\{[a-zA-Z_][\w]*\}$",   # {order_id}  - an unformatted f-string
+    r"^<[a-zA-Z_][\w \-]*>$",   # <order_id>  - a docs example left in
+    r"^\$[A-Z_]+$",             # $ORDER_ID   - a shell-style variable
+)
+
+
+def looks_like_placeholder(value) -> bool:
+    """True if the value is obviously a template that never got filled in."""
+    if value is None:
+        return True
+    text = str(value).strip()
+    if not text:
+        return True
+    if text.lower() in PLACEHOLDER_WORDS:
+        return True
+    if text.lower().startswith("your_"):
+        return True
+    return any(re.search(pat, text) for pat in PLACEHOLDER_PATTERNS)
+
+
+def _dig(data, path: str):
+    """Follow a dotted path such as 'order_ids.0' through dicts and lists."""
+    cur = data
+    for part in path.split("."):
+        if part == "":
+            continue
+        if isinstance(cur, dict):
+            if part not in cur:
+                return (False, None)
+            cur = cur[part]
+        elif isinstance(cur, (list, tuple)):
+            try:
+                cur = cur[int(part)]
+            except (ValueError, IndexError):
+                return (False, None)
+        else:
+            return (False, None)
+    return (True, cur)
+
+
+def _values_match(actual, expected, tolerance: float) -> bool:
+    if isinstance(expected, (list, tuple, set)):
+        return any(_values_match(actual, e, tolerance) for e in expected)
+    try:
+        return abs(float(actual) - float(expected)) <= tolerance
+    except (TypeError, ValueError):
+        pass
+    return str(actual).strip().lower() == str(expected).strip().lower()
+
+
+def grade_arg_quality(traj: Trajectory, golden: Golden) -> GraderScore:
+    specs: list[ArgQuality] = golden.arg_quality
+    if not specs:
+        return GraderScore(name="arg_quality", score=1.0, weight=0.0,
+                           detail="no argument expectations declared")
+
+    checks = 0
+    passed = 0
+    violations: list[str] = []
+
+    for spec in specs:
+        calls = [c for c in traj.calls() if c.tool == spec.tool]
+        if not calls:
+            # Whether the tool should have been called at all is
+            # tool_selection's job, not ours.
+            continue
+
+        for call in calls:
+            if spec.arg not in call.args:
+                checks += 1
+                violations.append(
+                    f"{spec.tool} called without the {spec.arg!r} argument")
+                continue
+            value = call.args[spec.arg]
+
+            if spec.forbid_placeholders:
+                checks += 1
+                if looks_like_placeholder(value):
+                    violations.append(
+                        f"{spec.tool}.{spec.arg} is an unfilled placeholder: "
+                        f"{value!r}")
+                else:
+                    passed += 1
+
+            if spec.must_contain_any:
+                checks += 1
+                hay = str(value).lower()
+                if any(n.lower() in hay for n in spec.must_contain_any):
+                    passed += 1
+                else:
+                    violations.append(
+                        f"{spec.tool}.{spec.arg}={value!r} contains none of "
+                        f"{spec.must_contain_any}")
+
+            if spec.must_match:
+                checks += 1
+                if re.search(spec.must_match, str(value)):
+                    passed += 1
+                else:
+                    violations.append(
+                        f"{spec.tool}.{spec.arg}={value!r} does not match "
+                        f"/{spec.must_match}/")
+
+            if spec.min_length is not None:
+                checks += 1
+                if len(str(value)) >= spec.min_length:
+                    passed += 1
+                else:
+                    violations.append(
+                        f"{spec.tool}.{spec.arg} is shorter than "
+                        f"{spec.min_length} characters: {value!r}")
+
+            if spec.max_length is not None:
+                checks += 1
+                if len(str(value)) <= spec.max_length:
+                    passed += 1
+                else:
+                    violations.append(
+                        f"{spec.tool}.{spec.arg} is longer than "
+                        f"{spec.max_length} characters")
+
+            if spec.grounded_in_prompt:
+                checks += 1
+                if str(value).strip().lower() in (golden.prompt or "").lower():
+                    passed += 1
+                else:
+                    violations.append(
+                        f"{spec.tool}.{spec.arg}={value!r} does not appear in "
+                        f"the task prompt - the agent may have invented it")
+
+            if spec.from_tool_output:
+                checks += 1
+                src_tool, _, src_path = spec.from_tool_output.partition(".")
+                # The most recent successful result from the source tool that
+                # happened BEFORE this call.
+                sources = [
+                    s for s in traj.steps
+                    if s.kind == StepKind.TOOL_RESULT and s.tool == src_tool
+                    and s.ok and s.index < call.index
+                ]
+                if not sources:
+                    violations.append(
+                        f"{spec.tool}.{spec.arg}={value!r} is not grounded: "
+                        f"{src_tool} never returned successfully before it")
+                else:
+                    found, expected = _dig(sources[-1].output, src_path)
+                    if not found:
+                        violations.append(
+                            f"{spec.tool}.{spec.arg}: {spec.from_tool_output} "
+                            f"was not present in the {src_tool} output")
+                    elif _values_match(value, expected, spec.tolerance):
+                        passed += 1
+                    else:
+                        violations.append(
+                            f"HALLUCINATED ARGUMENT: {spec.tool}.{spec.arg}="
+                            f"{value!r} but {spec.from_tool_output} was "
+                            f"{expected!r}")
+
+    if checks == 0:
+        return GraderScore(name="arg_quality", score=1.0, weight=0.0,
+                           detail="no argument expectations applied to this run")
+
+    score = passed / checks
+    return GraderScore(
+        name="arg_quality", score=_clamp(score), weight=0.0,
+        detail=f"{passed}/{checks} argument checks passed",
+        violations=violations[:6],
+    )
+
+
+# ---------------------------------------------------------------------------
 # Put it together
 # ---------------------------------------------------------------------------
 
@@ -413,6 +592,7 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskRe
             best = (key, variant.name, sel, ordr, eff)
 
     _, matched_path, selection, order, efficiency = best  # type: ignore[misc]
+    arg_quality = grade_arg_quality(traj, golden)
     redundancy = grade_redundancy(traj, golden)
     recovery = grade_recovery(traj, golden)
     safety, hard_fail = grade_safety(traj, golden)
@@ -420,6 +600,7 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskRe
     pairs = [
         (outcome, w.outcome),
         (selection, w.tool_selection),
+        (arg_quality, w.arg_quality),
         (order, w.order),
         (efficiency, w.efficiency),
         (redundancy, w.redundancy),
@@ -440,7 +621,12 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None) -> TaskRe
     path_score = sum(gs.score * wt for gs, wt in path_pairs) / path_w
 
     lucky = outcome.score >= 1.0 and path_score < cfg.lucky_pass_path_threshold
-    passed = composite >= golden.pass_threshold and not hard_fail
+    # A lucky pass is not a pass. The composite can still clear the bar when a
+    # correct answer carries a bad path - adding the weight of the right
+    # answer to a wandering route is exactly the arithmetic that lets a broken
+    # agent look fine - so the flag overrides the number.
+    passed = (composite >= golden.pass_threshold and not hard_fail
+              and not lucky)
 
     notes: list[str] = []
     if len(golden.path_variants()) > 1:

@@ -99,6 +99,32 @@ class ArgRule(BaseModel):
     hard: bool = True
 
 
+class ArgQuality(BaseModel):
+    """A soft expectation about the VALUE an agent passed to a tool.
+
+    `ArgRule` above is a veto (never refund more than the order was worth).
+    This is a score: calling the right tool with a useless argument is a real
+    failure that tool-name grading cannot see - an agent that searches the
+    knowledge base for the literal string "{{query}}" called exactly the tool
+    we wanted.
+
+    The most valuable check here is `from_tool_output`: it proves the agent
+    passed a value it actually retrieved, rather than one it invented.
+    """
+    tool: str
+    arg: str
+    # Content checks
+    must_contain_any: list[str] = Field(default_factory=list)
+    must_match: str | None = None            # regex
+    min_length: int | None = None
+    max_length: int | None = None
+    forbid_placeholders: bool = True         # "{{query}}", "<order_id>", "TODO"
+    # Grounding checks - is this value real, or did the model make it up?
+    from_tool_output: str | None = None      # e.g. "get_order.amount"
+    grounded_in_prompt: bool = False         # must appear in the task prompt
+    tolerance: float = 0.0                   # slack for numeric comparison
+
+
 class Expect(BaseModel):
     """What the final answer has to look like for the OUTCOME to count as right."""
     contains_all: list[str] = Field(default_factory=list)     # every one must appear
@@ -152,6 +178,7 @@ class Golden(BaseModel):
     max_steps: int | None = None                              # hard cap
     max_retries_per_tool: int = 2                             # hammering guard
     arg_rules: list[ArgRule] = Field(default_factory=list)
+    arg_quality: list[ArgQuality] = Field(default_factory=list)
     # Other routes that are equally acceptable. The path graders score the
     # run against the primary route and each alternative, and keep the best
     # match. Safety rules (forbidden/critical/must_precede/arg_rules) are

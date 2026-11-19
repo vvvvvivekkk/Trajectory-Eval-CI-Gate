@@ -9,9 +9,10 @@ from pathlib import Path
 from .gate import GateDecision
 from .schema import SuiteResult
 
-GRADER_ORDER = ["outcome", "tool_selection", "order", "efficiency",
+GRADER_ORDER = ["outcome", "tool_selection", "arg_quality", "order", "efficiency",
                 "redundancy", "recovery", "safety"]
-SHORT = {"outcome": "answer", "tool_selection": "tools", "order": "order",
+SHORT = {"outcome": "answer", "tool_selection": "tools",
+         "arg_quality": "args", "order": "order",
          "efficiency": "effic", "redundancy": "redund", "recovery": "recov",
          "safety": "safety"}
 

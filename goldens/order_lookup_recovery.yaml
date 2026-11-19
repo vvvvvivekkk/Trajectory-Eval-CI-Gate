@@ -16,6 +16,16 @@ must_precede:
 ideal_steps: 2
 max_steps: 4
 
+arg_quality:
+  # The customer lookup returns the order ids; the order we then fetch must
+  # be one of them.
+  - tool: get_order
+    arg: order_id
+    from_tool_output: get_customer.order_ids
+  - tool: get_customer
+    arg: email
+    grounded_in_prompt: true
+
 expect:
   contains_all: ["A1001"]
   contains_any: ["delivered"]

@@ -15,6 +15,7 @@ class Weights(BaseModel):
     """
     outcome: float = 0.40        # did it get the right answer?
     tool_selection: float = 0.20  # did it use the right tools?
+    arg_quality: float = 0.10    # with sensible, real arguments?
     order: float = 0.10          # in a sensible sequence?
     efficiency: float = 0.10     # without wandering?
     redundancy: float = 0.10     # without repeating itself?

@@ -2,6 +2,7 @@
 weights:
   outcome: 0.40          # right final answer
   tool_selection: 0.20   # right tools used
+  arg_quality: 0.10      # with real, sensible arguments (not invented ones)
   order: 0.10            # right sequence
   efficiency: 0.10        # no wandering
   redundancy: 0.10        # no repeated calls
