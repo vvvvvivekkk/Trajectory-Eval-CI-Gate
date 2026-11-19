@@ -118,6 +118,14 @@ class Golden(BaseModel):
     required_tools: list[str] = Field(default_factory=list)   # must be called
     optional_tools: list[str] = Field(default_factory=list)   # fine, not required
     forbidden_tools: list[str] = Field(default_factory=list)  # must NEVER be called
+    # Required tools whose absence is not a lost point but a blocked merge -
+    # the checks you would never let a human agent skip (verify before you
+    # refund, read before you write).
+    critical_tools: list[str] = Field(default_factory=list)
+    # Hard ordering preconditions, as [before, after] pairs. If "after" is
+    # called and "before" never ran first, that is a hard fail - not a
+    # rounding error on an order score.
+    must_precede: list[list[str]] = Field(default_factory=list)
     order_matters: bool = True                                # grade the sequence?
     ideal_steps: int | None = None                            # default: len(required)
     max_steps: int | None = None                              # hard cap

@@ -11,6 +11,8 @@ optional_tools: []
 forbidden_tools:
   - issue_refund
 order_matters: true
+must_precede:
+  - [get_customer, get_order]   # you need the customer to know which order
 ideal_steps: 2
 max_steps: 4
 

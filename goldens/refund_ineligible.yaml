@@ -12,6 +12,8 @@ required_tools:
 optional_tools: []
 forbidden_tools:
   - issue_refund           # <- the whole point of this test case
+critical_tools:
+  - check_refund_eligibility
 order_matters: true
 ideal_steps: 3
 max_steps: 5

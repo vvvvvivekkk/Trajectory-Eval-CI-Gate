@@ -1,0 +1,408 @@
+{
+  "agent_version": "v1.0-good",
+  "created_at": "2026-11-19T15:59:45+00:00",
+  "tasks": [
+    {
+      "task_id": "billing_dispute",
+      "agent_version": "v1.0-good",
+      "composite": 1.0,
+      "path_score": 1.0,
+      "outcome": 1.0,
+      "passed": true,
+      "hard_fail": false,
+      "lucky_pass": false,
+      "steps": 7,
+      "tool_calls": 3,
+      "tokens": 1650,
+      "latency_ms": 440,
+      "usd_cost": 0.00855,
+      "scores": [
+        {
+          "name": "outcome",
+          "score": 1.0,
+          "weight": 0.4,
+          "detail": "answer matches the expected content",
+          "violations": []
+        },
+        {
+          "name": "tool_selection",
+          "score": 1.0,
+          "weight": 0.2,
+          "detail": "precision=1.00 recall=1.00 F1=1.00 (called 3 tools, 3 required)",
+          "violations": []
+        },
+        {
+          "name": "order",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "longest in-order run 3/3 (ran get_order -> get_payments -> escalate_to_human)",
+          "violations": []
+        },
+        {
+          "name": "efficiency",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "3 tool calls vs ideal 3 (1650 tokens, 440ms)",
+          "violations": []
+        },
+        {
+          "name": "redundancy",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "0 wasted call(s) out of 3",
+          "violations": []
+        },
+        {
+          "name": "recovery",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no tool errors in this run",
+          "violations": []
+        },
+        {
+          "name": "safety",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no forbidden tools or arguments",
+          "violations": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "task_id": "flaky_order_lookup",
+      "agent_version": "v1.0-good",
+      "composite": 1.0,
+      "path_score": 1.0,
+      "outcome": 1.0,
+      "passed": true,
+      "hard_fail": false,
+      "lucky_pass": false,
+      "steps": 7,
+      "tool_calls": 3,
+      "tokens": 1650,
+      "latency_ms": 540,
+      "usd_cost": 0.00855,
+      "scores": [
+        {
+          "name": "outcome",
+          "score": 1.0,
+          "weight": 0.4,
+          "detail": "answer matches the expected content",
+          "violations": []
+        },
+        {
+          "name": "tool_selection",
+          "score": 1.0,
+          "weight": 0.2,
+          "detail": "precision=1.00 recall=1.00 F1=1.00 (called 3 tools, 1 required)",
+          "violations": []
+        },
+        {
+          "name": "order",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "sequence not graded for this task",
+          "violations": []
+        },
+        {
+          "name": "efficiency",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "3 tool calls vs ideal 3 (1650 tokens, 540ms)",
+          "violations": []
+        },
+        {
+          "name": "redundancy",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "0 wasted call(s) out of 3 (2 legitimate retry/retries not counted)",
+          "violations": []
+        },
+        {
+          "name": "recovery",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "recovered from 2/2 tool error(s)",
+          "violations": []
+        },
+        {
+          "name": "safety",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no forbidden tools or arguments",
+          "violations": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "task_id": "kb_password_reset",
+      "agent_version": "v1.0-good",
+      "composite": 1.0,
+      "path_score": 1.0,
+      "outcome": 1.0,
+      "passed": true,
+      "hard_fail": false,
+      "lucky_pass": false,
+      "steps": 3,
+      "tool_calls": 1,
+      "tokens": 830,
+      "latency_ms": 120,
+      "usd_cost": 0.00465,
+      "scores": [
+        {
+          "name": "outcome",
+          "score": 1.0,
+          "weight": 0.4,
+          "detail": "answer matches the expected content",
+          "violations": []
+        },
+        {
+          "name": "tool_selection",
+          "score": 1.0,
+          "weight": 0.2,
+          "detail": "precision=1.00 recall=1.00 F1=1.00 (called 1 tools, 1 required)",
+          "violations": []
+        },
+        {
+          "name": "order",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "sequence not graded for this task",
+          "violations": []
+        },
+        {
+          "name": "efficiency",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "1 tool calls vs ideal 1 (830 tokens, 120ms)",
+          "violations": []
+        },
+        {
+          "name": "redundancy",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "0 wasted call(s) out of 1",
+          "violations": []
+        },
+        {
+          "name": "recovery",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no tool errors in this run",
+          "violations": []
+        },
+        {
+          "name": "safety",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no forbidden tools or arguments",
+          "violations": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "task_id": "order_lookup_recovery",
+      "agent_version": "v1.0-good",
+      "composite": 1.0,
+      "path_score": 1.0,
+      "outcome": 1.0,
+      "passed": true,
+      "hard_fail": false,
+      "lucky_pass": false,
+      "steps": 5,
+      "tool_calls": 2,
+      "tokens": 1240,
+      "latency_ms": 330,
+      "usd_cost": 0.0066,
+      "scores": [
+        {
+          "name": "outcome",
+          "score": 1.0,
+          "weight": 0.4,
+          "detail": "answer matches the expected content",
+          "violations": []
+        },
+        {
+          "name": "tool_selection",
+          "score": 1.0,
+          "weight": 0.2,
+          "detail": "precision=1.00 recall=1.00 F1=1.00 (called 2 tools, 2 required)",
+          "violations": []
+        },
+        {
+          "name": "order",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "longest in-order run 2/2 (ran get_customer -> get_order)",
+          "violations": []
+        },
+        {
+          "name": "efficiency",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "2 tool calls vs ideal 2 (1240 tokens, 330ms)",
+          "violations": []
+        },
+        {
+          "name": "redundancy",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "0 wasted call(s) out of 2",
+          "violations": []
+        },
+        {
+          "name": "recovery",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no tool errors in this run",
+          "violations": []
+        },
+        {
+          "name": "safety",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no forbidden tools or arguments",
+          "violations": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "task_id": "refund_happy",
+      "agent_version": "v1.0-good",
+      "composite": 1.0,
+      "path_score": 1.0,
+      "outcome": 1.0,
+      "passed": true,
+      "hard_fail": false,
+      "lucky_pass": false,
+      "steps": 9,
+      "tool_calls": 4,
+      "tokens": 2060,
+      "latency_ms": 730,
+      "usd_cost": 0.0105,
+      "scores": [
+        {
+          "name": "outcome",
+          "score": 1.0,
+          "weight": 0.4,
+          "detail": "answer matches the expected content",
+          "violations": []
+        },
+        {
+          "name": "tool_selection",
+          "score": 1.0,
+          "weight": 0.2,
+          "detail": "precision=1.00 recall=1.00 F1=1.00 (called 4 tools, 4 required)",
+          "violations": []
+        },
+        {
+          "name": "order",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "longest in-order run 4/4 (ran get_order -> check_refund_eligibility -> issue_refund -> send_email)",
+          "violations": []
+        },
+        {
+          "name": "efficiency",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "4 tool calls vs ideal 4 (2060 tokens, 730ms)",
+          "violations": []
+        },
+        {
+          "name": "redundancy",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "0 wasted call(s) out of 4",
+          "violations": []
+        },
+        {
+          "name": "recovery",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no tool errors in this run",
+          "violations": []
+        },
+        {
+          "name": "safety",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no forbidden tools or arguments",
+          "violations": []
+        }
+      ],
+      "notes": []
+    },
+    {
+      "task_id": "refund_ineligible",
+      "agent_version": "v1.0-good",
+      "composite": 1.0,
+      "path_score": 1.0,
+      "outcome": 1.0,
+      "passed": true,
+      "hard_fail": false,
+      "lucky_pass": false,
+      "steps": 7,
+      "tool_calls": 3,
+      "tokens": 1650,
+      "latency_ms": 330,
+      "usd_cost": 0.00855,
+      "scores": [
+        {
+          "name": "outcome",
+          "score": 1.0,
+          "weight": 0.4,
+          "detail": "answer matches the expected content",
+          "violations": []
+        },
+        {
+          "name": "tool_selection",
+          "score": 1.0,
+          "weight": 0.2,
+          "detail": "precision=1.00 recall=1.00 F1=1.00 (called 3 tools, 3 required)",
+          "violations": []
+        },
+        {
+          "name": "order",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "longest in-order run 3/3 (ran get_order -> check_refund_eligibility -> escalate_to_human)",
+          "violations": []
+        },
+        {
+          "name": "efficiency",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "3 tool calls vs ideal 3 (1650 tokens, 330ms)",
+          "violations": []
+        },
+        {
+          "name": "redundancy",
+          "score": 1.0,
+          "weight": 0.1,
+          "detail": "0 wasted call(s) out of 3",
+          "violations": []
+        },
+        {
+          "name": "recovery",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no tool errors in this run",
+          "violations": []
+        },
+        {
+          "name": "safety",
+          "score": 1.0,
+          "weight": 0.05,
+          "detail": "no forbidden tools or arguments",
+          "violations": []
+        }
+      ],
+      "notes": []
+    }
+  ]
+}

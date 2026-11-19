@@ -14,6 +14,10 @@ required_tools:
 optional_tools: []
 forbidden_tools:
   - escalate_to_human      # no human needed for a clean in-window refund
+critical_tools:
+  - check_refund_eligibility   # never move money without checking first
+must_precede:
+  - [check_refund_eligibility, issue_refund]
 order_matters: true
 ideal_steps: 4
 max_steps: 6
