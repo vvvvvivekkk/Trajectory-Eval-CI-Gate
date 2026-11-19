@@ -7,6 +7,8 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, Field
 
+from .pricing import PricingConfig
+
 
 class Weights(BaseModel):
     """How much each grader counts toward the final score for a task.
@@ -34,7 +36,10 @@ class GateThresholds(BaseModel):
     block_on_pass_flip: bool = True      # a task going pass -> fail = block
     block_on_new_lucky_pass: bool = True  # right answer via a bad path = block
     block_on_hard_fail: bool = True      # forbidden tool / arg violation = block
-    max_cost_increase_pct: float = 25.0  # tokens/$ creeping up this much = block
+    max_cost_increase_pct: float = 25.0  # token use creeping up this much = block
+    max_usd_increase_pct: float = 25.0   # the same test, in money
+    block_on_budget_exceeded: bool = True  # a golden's absolute $ / token cap
+    max_suite_usd: float | None = None   # total spend for one suite run
     max_steps_increase_pct: float = 30.0  # step count creeping up this much = block
     block_on_cost_regression: bool = True
     min_mean_score: float = 0.0          # absolute floor, 0 = disabled
@@ -53,6 +58,7 @@ class JudgeConfig(BaseModel):
 class Config(BaseModel):
     weights: Weights = Field(default_factory=Weights)
     judge: JudgeConfig = Field(default_factory=JudgeConfig)
+    pricing: PricingConfig = Field(default_factory=PricingConfig)
     thresholds: GateThresholds = Field(default_factory=GateThresholds)
     # A task whose answer is right but whose path scores below this is a
     # "lucky pass" - the most useful thing this whole project detects.

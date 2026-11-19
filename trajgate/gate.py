@@ -11,6 +11,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 from .config import Config
+from .pricing import fmt_usd
 from .schema import SuiteResult, TaskResult
 
 
@@ -25,13 +26,18 @@ class TaskDelta(BaseModel):
     hard_fail: bool = False
     steps_delta_pct: float | None = None
     cost_delta_pct: float | None = None
+    usd_delta_pct: float | None = None
+    usd_cost: float = 0.0
     route_changed: bool = False
+    budget_exceeded: bool = False
     blocking_reasons: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
 
 class GateDecision(BaseModel):
     blocked: bool
+    suite_usd: float = 0.0
+    baseline_usd: float | None = None
     reasons: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     deltas: list[TaskDelta] = Field(default_factory=list)
@@ -74,9 +80,12 @@ def evaluate(current: SuiteResult, baseline: SuiteResult | None,
             new_lucky_pass=cur.lucky_pass and not (b.lucky_pass if b else False),
             hard_fail=cur.hard_fail,
         )
+        d.usd_cost = cur.usd_cost
+        d.budget_exceeded = cur.budget_exceeded
         if b:
             d.steps_delta_pct = _pct_change(cur.tool_calls, b.tool_calls)
             d.cost_delta_pct = _pct_change(cur.tokens, b.tokens)
+            d.usd_delta_pct = _pct_change(cur.usd_cost, b.usd_cost)
 
         # --- the blocking rules ---------------------------------------------
         if th.block_on_hard_fail and cur.hard_fail:
@@ -123,6 +132,26 @@ def evaluate(current: SuiteResult, baseline: SuiteResult | None,
                     f"{msg}, but the route changed from "
                     f"'{b.matched_path}' to '{cur.matched_path}' - not a "
                     f"like-for-like comparison, so not blocking")
+        # Money. Tokens and dollars can disagree - a cheaper model called
+        # twice as often is a token saving and a bigger bill - so both are
+        # checked and the dollar figure is the one quoted to humans.
+        usd_over = (d.usd_delta_pct is not None
+                    and d.usd_delta_pct > th.max_usd_increase_pct)
+        if b and th.block_on_cost_regression and usd_over:
+            msg = (f"cost up {d.usd_delta_pct:.0f}% "
+                   f"({fmt_usd(b.usd_cost)} -> {fmt_usd(cur.usd_cost)}, limit "
+                   f"{th.max_usd_increase_pct:.0f}%)")
+            if same_route:
+                d.blocking_reasons.append(msg)
+            else:
+                d.warnings.append(f"{msg}, on a different accepted route")
+
+        # An absolute ceiling needs no baseline and survives a route change.
+        if th.block_on_budget_exceeded and cur.budget_exceeded:
+            over = [n for n in cur.notes if n.startswith("OVER BUDGET")]
+            d.blocking_reasons.append(
+                over[0] if over else "exceeded the task's absolute budget")
+
         if b and th.block_on_cost_regression and steps_over:
             msg = (f"tool calls up {d.steps_delta_pct:.0f}% (limit "
                    f"{th.max_steps_increase_pct:.0f}%)")
@@ -160,6 +189,14 @@ def evaluate(current: SuiteResult, baseline: SuiteResult | None,
             "no baseline found - nothing to compare against, so nothing is "
             "blocked. Commit a baseline so the next pull request is gated."
         )
+
+    decision.suite_usd = round(sum(t.usd_cost for t in current.tasks), 8)
+    if baseline:
+        decision.baseline_usd = round(sum(t.usd_cost for t in baseline.tasks), 8)
+    if th.max_suite_usd is not None and decision.suite_usd > th.max_suite_usd:
+        decision.reasons.append(
+            f"the whole suite cost {fmt_usd(decision.suite_usd)}, over the "
+            f"configured ceiling of {fmt_usd(th.max_suite_usd)}")
 
     if th.min_mean_score > 0 and current.mean_composite < th.min_mean_score:
         decision.reasons.append(

@@ -20,9 +20,9 @@ from trajgate.schema import Step, StepKind, Trajectory
 
 from .tools import Backend, ToolError
 
-# Fake per-token prices, only so the gate has a cost number to watch.
-USD_PER_1K_IN = 0.003
-USD_PER_1K_OUT = 0.015
+# The fake model this demo agent "runs on". Its price lives in config.yaml
+# under `pricing.models`, like any real model would.
+DEMO_MODEL = "demo-model-v1"
 
 TOKENS_IN_PER_CALL = 350
 TOKENS_OUT_PER_CALL = 60
@@ -213,7 +213,8 @@ def run_task(task_id: str, version: str = "v1.0-good", run_id: str = "run-1") ->
     flaky_tool, flaky_times = FLAKY.get(task_id, (None, 0))
     backend = Backend(flaky_tool=flaky_tool, flaky_times=flaky_times)
 
-    traj = Trajectory(task_id=task_id, agent_version=version, run_id=run_id)
+    traj = Trajectory(task_id=task_id, agent_version=version, run_id=run_id,
+                      model=DEMO_MODEL)
     idx = 0
     obs: dict[str, object] = {}
     failed: list[str] = []
@@ -251,10 +252,9 @@ def run_task(task_id: str, version: str = "v1.0-good", run_id: str = "run-1") ->
                            tokens_in=300, tokens_out=120))
     traj.final_answer = answer
 
-    tokens_in = sum(s.tokens_in for s in traj.steps)
-    tokens_out = sum(s.tokens_out for s in traj.steps)
-    traj.usd_cost = (tokens_in / 1000 * USD_PER_1K_IN
-                     + tokens_out / 1000 * USD_PER_1K_OUT)
+    # usd_cost is deliberately left at 0: the grader prices the run from the
+    # token counts and the configured price for the model, which is how a
+    # real agent's trace works too.
     traj.total_latency_ms = sum(s.latency_ms for s in traj.steps)
     return traj
 

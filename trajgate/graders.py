@@ -23,6 +23,7 @@ import json
 import re
 
 from .config import Config
+from .pricing import UnknownModel, cost_usd, fmt_usd
 from .schema import (
     ArgQuality,
     ArgRule,
@@ -643,7 +644,37 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None,
     passed = (composite >= golden.pass_threshold and not hard_fail
               and not lucky)
 
+    # Price the run. A trajectory may already carry a cost (your own
+    # harness may know it exactly); otherwise it is worked out from the
+    # token split and the configured price for the model.
+    tokens_in, tokens_out = traj.tokens_split()
+    usd = traj.usd_cost
+    cost_note = ""
+    if not usd:
+        try:
+            usd = cost_usd(tokens_in, tokens_out, traj.model, cfg.pricing)
+        except UnknownModel as e:
+            usd = 0.0
+            cost_note = f"cost not priced: {e}"
+
+    # Absolute ceilings, which hold whichever route was taken.
+    budget_exceeded = False
+    budget_notes: list[str] = []
+    if golden.max_usd_cost is not None and usd > golden.max_usd_cost:
+        budget_exceeded = True
+        budget_notes.append(
+            f"OVER BUDGET: this run cost {fmt_usd(usd)}, the task's ceiling "
+            f"is {fmt_usd(golden.max_usd_cost)}")
+    if golden.max_tokens is not None and traj.tokens() > golden.max_tokens:
+        budget_exceeded = True
+        budget_notes.append(
+            f"OVER BUDGET: {traj.tokens()} tokens, the task's ceiling is "
+            f"{golden.max_tokens}")
+
     notes: list[str] = []
+    notes.extend(budget_notes)
+    if cost_note:
+        notes.append(cost_note)
     if judged is not None and judged.excluded:
         notes.append(f"JUDGE EXCLUDED: {judged.detail} - the composite was "
                      f"computed without it, not with a free pass")
@@ -673,8 +704,12 @@ def grade(traj: Trajectory, golden: Golden, cfg: Config | None = None,
         steps=len(traj.steps),
         tool_calls=len(traj.calls()),
         tokens=traj.tokens(),
+        tokens_in=tokens_in,
+        tokens_out=tokens_out,
+        model=traj.model,
         latency_ms=traj.latency_ms(),
-        usd_cost=round(traj.usd_cost, 6),
+        usd_cost=round(usd, 8),
+        budget_exceeded=budget_exceeded,
         scores=scores,
         notes=notes,
         matched_path=matched_path,

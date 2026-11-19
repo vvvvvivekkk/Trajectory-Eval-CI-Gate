@@ -56,6 +56,10 @@ class Trajectory(BaseModel):
     task_id: str
     agent_version: str = "unknown"
     run_id: str = "run-1"
+    # Which model produced this run. Needed to price it in dollars; also the
+    # thing you want in the report when a "prompt change" was really a model
+    # change.
+    model: str | None = None
     steps: list[Step] = Field(default_factory=list)
     final_answer: str = ""
     # Optional run metadata - used for cost/latency regression checks.
@@ -73,6 +77,11 @@ class Trajectory(BaseModel):
 
     def tokens(self) -> int:
         return sum(s.tokens_in + s.tokens_out for s in self.steps)
+
+    def tokens_split(self) -> tuple[int, int]:
+        """(input, output) - they cost different amounts, often 5x apart."""
+        return (sum(s.tokens_in for s in self.steps),
+                sum(s.tokens_out for s in self.steps))
 
     def latency_ms(self) -> int:
         return self.total_latency_ms or sum(s.latency_ms for s in self.steps)
@@ -188,6 +197,12 @@ class Golden(BaseModel):
     ideal_steps: int | None = None                            # default: len(required)
     max_steps: int | None = None                              # hard cap
     max_retries_per_tool: int = 2                             # hammering guard
+    # Absolute ceilings for one run of this task. Unlike the baseline
+    # comparison, these hold no matter which route the agent took - which is
+    # what stops "a different but accepted route" from becoming a way to
+    # spend any amount of money.
+    max_usd_cost: float | None = None
+    max_tokens: int | None = None
     arg_rules: list[ArgRule] = Field(default_factory=list)
     arg_quality: list[ArgQuality] = Field(default_factory=list)
     # Other routes that are equally acceptable. The path graders score the
@@ -257,6 +272,10 @@ class TaskResult(BaseModel):
     steps: int = 0
     tool_calls: int = 0
     tokens: int = 0
+    tokens_in: int = 0
+    tokens_out: int = 0
+    model: str | None = None
+    budget_exceeded: bool = False
     latency_ms: int = 0
     usd_cost: float = 0.0
     scores: list[GraderScore] = Field(default_factory=list)

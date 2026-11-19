@@ -10,6 +10,20 @@ weights:
   safety: 0.05           # no forbidden actions
   judge: 0.0             # the LLM judge: weightless until you choose otherwise
 
+# What a token costs, in US dollars per MILLION tokens. THESE ARE YOUR
+# NUMBERS TO MAINTAIN - the only entry shipped here is the fake model the
+# offline demo agent uses. Add your real models and keep them current; with
+# strict: true an unpriced model is a loud error rather than a silent $0,
+# because a cost gate that quietly stops working is worse than none.
+pricing:
+  default_model: demo-model-v1
+  strict: true
+  models:
+    demo-model-v1:
+      usd_per_m_in: 3.00
+      usd_per_m_out: 15.00
+      note: invented prices for the offline demo, not a real model
+
 # The optional LLM judge, for answers that string assertions cannot check
 # (tone, whether a refusal was actually explained). Off by default: a grader
 # that blocks merges should be free, instant and reproducible, and a model is
@@ -35,7 +49,10 @@ thresholds:
   block_on_pass_flip: true
   block_on_new_lucky_pass: true
   block_on_hard_fail: true
-  max_cost_increase_pct: 25.0
+  max_cost_increase_pct: 25.0      # token use
+  max_usd_increase_pct: 25.0       # the same test, in money
+  block_on_budget_exceeded: true   # a golden's own max_usd_cost / max_tokens
+  max_suite_usd: null              # total spend per suite run; null = no cap
   max_steps_increase_pct: 30.0
   block_on_cost_regression: true
   min_mean_score: 0.0

@@ -1,6 +1,6 @@
 {
   "agent_version": "v1.0-good",
-  "created_at": "2026-11-19T16:44:03+00:00",
+  "created_at": "2026-11-19T16:46:40+00:00",
   "tasks": [
     {
       "task_id": "billing_dispute",
@@ -14,6 +14,10 @@
       "steps": 7,
       "tool_calls": 3,
       "tokens": 1650,
+      "tokens_in": 1350,
+      "tokens_out": 300,
+      "model": "demo-model-v1",
+      "budget_exceeded": false,
       "latency_ms": 440,
       "usd_cost": 0.00855,
       "scores": [
@@ -97,6 +101,10 @@
       "steps": 7,
       "tool_calls": 3,
       "tokens": 1650,
+      "tokens_in": 1350,
+      "tokens_out": 300,
+      "model": "demo-model-v1",
+      "budget_exceeded": false,
       "latency_ms": 540,
       "usd_cost": 0.00855,
       "scores": [
@@ -180,6 +188,10 @@
       "steps": 3,
       "tool_calls": 1,
       "tokens": 830,
+      "tokens_in": 650,
+      "tokens_out": 180,
+      "model": "demo-model-v1",
+      "budget_exceeded": false,
       "latency_ms": 120,
       "usd_cost": 0.00465,
       "scores": [
@@ -263,6 +275,10 @@
       "steps": 5,
       "tool_calls": 2,
       "tokens": 1240,
+      "tokens_in": 1000,
+      "tokens_out": 240,
+      "model": "demo-model-v1",
+      "budget_exceeded": false,
       "latency_ms": 330,
       "usd_cost": 0.0066,
       "scores": [
@@ -346,6 +362,10 @@
       "steps": 3,
       "tool_calls": 1,
       "tokens": 830,
+      "tokens_in": 650,
+      "tokens_out": 180,
+      "model": "demo-model-v1",
+      "budget_exceeded": false,
       "latency_ms": 180,
       "usd_cost": 0.00465,
       "scores": [
@@ -431,6 +451,10 @@
       "steps": 9,
       "tool_calls": 4,
       "tokens": 2060,
+      "tokens_in": 1700,
+      "tokens_out": 360,
+      "model": "demo-model-v1",
+      "budget_exceeded": false,
       "latency_ms": 730,
       "usd_cost": 0.0105,
       "scores": [
@@ -514,6 +538,10 @@
       "steps": 7,
       "tool_calls": 3,
       "tokens": 1650,
+      "tokens_in": 1350,
+      "tokens_out": 300,
+      "model": "demo-model-v1",
+      "budget_exceeded": false,
       "latency_ms": 330,
       "usd_cost": 0.00855,
       "scores": [

@@ -7,6 +7,7 @@ import html
 from pathlib import Path
 
 from .gate import GateDecision
+from .pricing import fmt_usd
 from .schema import SuiteResult
 
 GRADER_ORDER = ["outcome", "tool_selection", "arg_quality", "order", "efficiency",
@@ -30,6 +31,8 @@ def _flags(t) -> str:
     f = []
     if t.hard_fail:
         f.append("HARD-FAIL")
+    if getattr(t, "budget_exceeded", False):
+        f.append("OVER-BUDGET")
     if t.lucky_pass:
         f.append("LUCKY-PASS")
     if not t.passed and not t.hard_fail:
@@ -42,7 +45,8 @@ def terminal(suite: SuiteResult, decision: GateDecision) -> str:
     lines.append("")
     lines.append(f"Trajectory eval - agent {suite.agent_version}")
     lines.append("=" * 72)
-    head = f"{'task':<24}{'score':>7}{'delta':>8}{'calls':>7}  flags"
+    head = (f"{'task':<24}{'score':>7}{'delta':>8}{'calls':>7}"
+            f"{'cost':>10}  flags")
     lines.append(head)
     lines.append("-" * 72)
     dmap = {d.task_id: d for d in decision.deltas}
@@ -50,12 +54,20 @@ def terminal(suite: SuiteResult, decision: GateDecision) -> str:
         d = dmap.get(t.task_id)
         delta = f"{d.delta:+.3f}" if d and d.baseline is not None else "   new"
         lines.append(f"{t.task_id:<24}{t.composite:>7.3f}{delta:>8}"
-                     f"{t.tool_calls:>7}  {_flags(t)}")
+                     f"{t.tool_calls:>7}{fmt_usd(t.usd_cost):>10}  "
+                     f"{_flags(t)}")
     lines.append("-" * 72)
     base = (f" (baseline {decision.mean_baseline:.3f}, "
             f"{decision.mean_delta:+.3f})" if decision.mean_baseline is not None else "")
     lines.append(f"mean score {suite.mean_composite:.3f}{base}   "
                  f"pass rate {suite.pass_rate*100:.0f}%")
+    cost_line = f"suite cost {fmt_usd(decision.suite_usd)}"
+    if decision.baseline_usd:
+        pct = ((decision.suite_usd - decision.baseline_usd)
+               / decision.baseline_usd * 100)
+        cost_line += (f" (baseline {fmt_usd(decision.baseline_usd)}, "
+                      f"{pct:+.0f}%)")
+    lines.append(cost_line)
     lines.append("")
     if decision.blocked:
         lines.append("GATE: BLOCKED - this change would not be merged")
@@ -76,9 +88,14 @@ def markdown(suite: SuiteResult, decision: GateDecision) -> str:
     base = (f" | baseline `{decision.mean_baseline:.3f}` "
             f"(**{decision.mean_delta:+.3f}**)" if decision.mean_baseline is not None else
             " | _no baseline committed yet_")
+    cost = f" | cost `{fmt_usd(decision.suite_usd)}`"
+    if decision.baseline_usd:
+        pct = ((decision.suite_usd - decision.baseline_usd)
+               / decision.baseline_usd * 100)
+        cost += f" (**{pct:+.0f}%**)"
     out.append(f"Agent `{suite.agent_version}` | mean score "
                f"`{suite.mean_composite:.3f}`{base} | pass rate "
-               f"`{suite.pass_rate*100:.0f}%`")
+               f"`{suite.pass_rate*100:.0f}%`{cost}")
     out.append("")
 
     if decision.blocked:
@@ -87,7 +104,8 @@ def markdown(suite: SuiteResult, decision: GateDecision) -> str:
         out.append("")
 
     present = graders_present(suite)
-    cols = ["task", "score", "Δ"] + [SHORT.get(g, g) for g in present] + ["calls", "flags"]
+    cols = (["task", "score", "Δ"] + [SHORT.get(g, g) for g in present]
+            + ["calls", "cost", "flags"])
     out.append("| " + " | ".join(cols) + " |")
     out.append("|" + "|".join(["---"] * len(cols)) + "|")
     dmap = {d.task_id: d for d in decision.deltas}
@@ -97,7 +115,7 @@ def markdown(suite: SuiteResult, decision: GateDecision) -> str:
         sm = t.score_map()
         row = [f"`{t.task_id}`", f"**{t.composite:.3f}**", delta]
         row += [f"{sm.get(g, 0):.2f}" for g in present]
-        row += [str(t.tool_calls), _flags(t)]
+        row += [str(t.tool_calls), fmt_usd(t.usd_cost), _flags(t)]
         out.append("| " + " | ".join(row) + " |")
     out.append("")
 
@@ -151,6 +169,7 @@ def html_report(suite: SuiteResult, decision: GateDecision) -> str:
             f'<td class="num big">{t.composite:.3f}</td>'
             f'<td class="num {dcls}">{delta}</td>{cells}'
             f'<td class="num">{t.tool_calls}</td>'
+            f'<td class="num">{fmt_usd(t.usd_cost)}</td>'
             f'<td><span class="flag {"bad" if (t.hard_fail or not t.passed) else "warn" if t.lucky_pass else "good"}">'
             f'{_flags(t)}</span></td>'
             f'<td class="notes">{notes}</td></tr>')
@@ -199,11 +218,12 @@ def html_report(suite: SuiteResult, decision: GateDecision) -> str:
 <h1>Trajectory eval &mdash; <code>{html.escape(suite.agent_version)}</code></h1>
 <div class="sub">{suite.created_at} &middot; mean score
  <b>{suite.mean_composite:.3f}</b> &middot; {baseline_txt} &middot;
- pass rate {suite.pass_rate*100:.0f}%</div>
+ pass rate {suite.pass_rate*100:.0f}% &middot; suite cost
+ <b>{fmt_usd(decision.suite_usd)}</b></div>
 <div class="verdict {vclass}">GATE {verdict}</div>
 {f"<ul>{reasons}</ul>" if reasons else ""}
 <table><thead><tr><th>task</th><th>score</th><th>&Delta;</th>{heads}
-<th>calls</th><th>flags</th><th>notes</th></tr></thead>
+<th>calls</th><th>cost</th><th>flags</th><th>notes</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table>
 {f"<h1 style='font-size:14px;margin-top:24px'>Notes</h1><ul>{warns}</ul>" if warns else ""}
 </body></html>"""
